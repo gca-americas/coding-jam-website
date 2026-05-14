@@ -1,0 +1,41 @@
+# Keep the build context as small as possible — Docker re-uploads it on every build.
+
+# --- Build / runtime artefacts (must be rebuilt inside the image) -----------
+node_modules
+.next
+out
+build
+dist
+
+# --- Local-only state -------------------------------------------------------
+.env
+.env.local
+.env.*.local
+.git
+.gitignore
+.gitattributes
+.github
+.vscode
+.idea
+.DS_Store
+*.log
+
+# --- Repo hygiene that doesn't belong in the image --------------------------
+README.md
+*.md
+LICENSE
+
+# --- Seed source — used by `npm run seed` from a workstation, never at runtime
+data
+scripts
+
+# --- Docker / Cloud config we don't need inside the image -------------------
+Dockerfile
+.dockerignore
+.gcloudignore
+
+# --- Tests / coverage (no tests yet, but future-proof) ----------------------
+**/*.test.ts
+**/*.test.tsx
+**/__tests__
+coverage

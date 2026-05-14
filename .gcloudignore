@@ -1,0 +1,37 @@
+# Controls what `gcloud run deploy --source .` uploads to Cloud Build.
+# Keep this tight — every file here is something we DON'T ship to the builder.
+
+# --- Build / runtime artefacts (rebuilt inside the image) -------------------
+node_modules
+.next
+out
+build
+dist
+
+# --- Local-only state -------------------------------------------------------
+.env
+.env.local
+.env.*.local
+.git
+.gitignore
+.gitattributes
+.github
+.vscode
+.idea
+.DS_Store
+*.log
+
+# --- Docs (already in git, no need in build context) ------------------------
+README.md
+*.md
+LICENSE
+
+# --- Seed data + scripts (workstation-only, never run inside the image) -----
+data
+scripts
+
+# --- Tests / coverage -------------------------------------------------------
+**/*.test.ts
+**/*.test.tsx
+**/__tests__
+coverage

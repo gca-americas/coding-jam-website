@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #ffffff;
+  --ink: #202124;
+  --ash: #5f6368;
+  --line: #e8eaed;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@layer components {
+  .container-page {
+    @apply max-w-6xl mx-auto px-6 sm:px-8;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-medium transition-all;
+  }
+
+  .btn-primary {
+    @apply btn bg-ink text-white hover:shadow-lift hover:-translate-y-0.5;
+  }
+
+  .btn-google {
+    @apply btn text-white shadow-soft hover:shadow-lift hover:-translate-y-0.5;
+    background: linear-gradient(90deg, #4285f4 0%, #34a853 33%, #fbbc04 66%, #ea4335 100%);
+  }
+
+  .btn-ghost {
+    @apply btn border border-line bg-white text-ink hover:bg-cloud;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium;
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-ash;
+  }
+
+  .card {
+    @apply rounded-2xl border border-line bg-white shadow-soft transition-all;
+  }
+
+  .card-hover {
+    @apply hover:shadow-pop hover:-translate-y-1;
+  }
+
+  .section-eyebrow {
+    @apply text-xs font-semibold tracking-[0.18em] uppercase text-ash;
+  }
+
+  .h-display {
+    @apply font-display font-bold tracking-tight;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-line bg-white px-4 py-3 text-sm text-ink placeholder:text-ash/70 focus:border-gblue focus:outline-none focus:ring-2 focus:ring-gblue/20;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-ink mb-1.5;
+  }
+
+  .hint {
+    @apply mt-1 text-xs text-ash;
+  }
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #4285f4 0%, #34a853 33%, #fbbc04 66%, #ea4335 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.dotted-bg {
+  background-image: radial-gradient(rgba(60, 64, 67, 0.08) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.diag-bg {
+  background:
+    radial-gradient(900px circle at 10% -20%, rgba(66, 133, 244, 0.10), transparent 40%),
+    radial-gradient(900px circle at 90% 0%, rgba(234, 67, 53, 0.08), transparent 40%),
+    radial-gradient(900px circle at 50% 110%, rgba(52, 168, 83, 0.10), transparent 40%),
+    radial-gradient(900px circle at 100% 100%, rgba(251, 188, 4, 0.10), transparent 40%);
+}
+
+/* Hide native details disclosure marker — we use a custom + indicator. */
+summary::-webkit-details-marker { display: none; }
+summary { list-style: none; }
