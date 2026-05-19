@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Timeline from "@/components/Timeline";
+import HowItWorks from "@/components/HowItWorks";
 import { SPEC_TALK_QUESTIONS, TRACKS } from "@/lib/tracks";
 
 export default function AboutPage() {
@@ -7,8 +8,7 @@ export default function AboutPage() {
     <>
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 diag-bg" />
-        <div className="absolute inset-0 dotted-bg opacity-60" />
+        <div className="absolute inset-0 dotted-bg opacity-50" />
         <div className="container-page relative py-20 sm:py-24">
           <Link href="/" className="inline-flex items-center gap-1.5 text-ash text-sm hover:text-ink">
             ← Back to home
@@ -18,7 +18,7 @@ export default function AboutPage() {
           </div>
           <h1 className="h-display text-5xl sm:text-7xl mt-6 max-w-3xl leading-[1.02]">
             A jam session.<br />
-            <span className="gradient-text">Not a hackathon.</span>
+            Not a <span className="text-gred">hackathon</span>.
           </h1>
           <p className="mt-6 text-lg text-ash max-w-2xl">
             GDG Coding Jams transform standard tech meetups into vibrant, hands-on community sandboxes where
@@ -32,21 +32,22 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* How it works — the 30-second visual explainer */}
+      <HowItWorks />
+
       {/* The concept */}
-      <section className="container-page py-20">
+      <section className="container-page pb-20">
         <div className="grid sm:grid-cols-3 gap-8 items-start">
           <div className="sm:col-span-1">
-            <div className="section-eyebrow">The concept</div>
-            <h2 className="h-display text-3xl mt-2">Show up. Build. Walk out with something.</h2>
+            <div className="section-eyebrow">Why it works</div>
+            <h2 className="h-display text-3xl mt-2">A jam, not a hackathon.</h2>
             <p className="text-ash mt-4">
-              Think of a local musical jam or an after-work pottery class. The instruments are out, an instructor
-              gives a creative prompt, and you spend two hours making something tangible alongside friends. We bring
-              that exact energy to software development.
+              Think of a musical jam or an after-work pottery class. Instruments out, a creative prompt, two hours
+              of making something tangible alongside friends. We bring that energy to software.
             </p>
             <p className="text-ash mt-4">
-              We&rsquo;re moving past sit-and-listen tech talks. We&rsquo;re also stripping away the
-              high-pressure, exhausting environment of 48-hour competitive hackathons. Just blueprints, tech
-              access, and collaborative space.
+              No sit-and-listen tech talks. No 48-hour competitive hackathon grind. Just blueprints, tech access,
+              and collaborative space.
             </p>
           </div>
           <div className="sm:col-span-2 grid sm:grid-cols-3 gap-4">
@@ -106,6 +107,7 @@ export default function AboutPage() {
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               <span className="pill">⏱️ 2 hours</span>
+              <span className="pill">🚀 Antigravity-powered</span>
               <span className="pill">🍕 Pizza included</span>
               <span className="pill">💻 Bring your laptop</span>
               <span className="pill">🎟️ Free</span>
@@ -137,6 +139,11 @@ export default function AboutPage() {
               <p className="text-ash mt-3">
                 Eight reps over eight tracks. The apps are the practice; the Spec Talk is the muscle. By Track 8,
                 participants are running it solo on their own original ideas.
+              </p>
+              <p className="text-ash mt-3">
+                In Antigravity, the Spec Talk becomes the PRD — and the PRD generates the UI doc, the engineering
+                doc, and the code. The <span className="font-medium text-ink">fix-the-doc-not-the-code</span> loop
+                starts here.
               </p>
               <p className="mt-4 text-sm text-ash italic border-l-2 border-line pl-3">
                 &ldquo;Demo first, theory never&rdquo; — participants see something cool, then build their version.
@@ -203,13 +210,12 @@ export default function AboutPage() {
 
       {/* CTA */}
       <section className="container-page pb-24">
-        <div className="rounded-3xl overflow-hidden relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-gblue via-ggreen to-gyellow opacity-95" />
-          <div className="absolute inset-0 dotted-bg opacity-40" />
+        <div className="rounded-3xl overflow-hidden relative bg-ink">
+          <div className="absolute inset-0 dotted-bg opacity-10" />
           <div className="relative p-10 sm:p-14 text-white grid sm:grid-cols-2 gap-8 items-center">
             <div>
               <h2 className="h-display text-3xl sm:text-4xl">Ready to jam?</h2>
-              <p className="mt-3 text-white/90 max-w-md">
+              <p className="mt-3 text-white/80 max-w-md">
                 Open any track and ship a working app in the next 45 minutes. Or grab the kit and host a jam in
                 your city.
               </p>
@@ -218,10 +224,16 @@ export default function AboutPage() {
               <Link href="/#lineup" className="btn bg-white text-ink hover:shadow-pop">
                 Browse the lineup
               </Link>
-              <Link href="/organizer" className="btn border border-white/40 text-white hover:bg-white/10">
+              <Link href="/organizer" className="btn border border-white/30 text-white hover:bg-white/10">
                 Run a jam
               </Link>
             </div>
+          </div>
+          <div className="relative grid grid-cols-4 h-2">
+            <div className="bg-gblue" />
+            <div className="bg-gred" />
+            <div className="bg-gyellow" />
+            <div className="bg-ggreen" />
           </div>
         </div>
       </section>
