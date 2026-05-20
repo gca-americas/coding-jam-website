@@ -160,16 +160,21 @@ echo
 # 6b. Ensure AUTH_URL matches the discovered public URL.
 # Without this, Auth.js v5 inside the Cloud Run container falls back to
 # HOSTNAME+PORT (0.0.0.0:8080) when building redirect / error URLs, breaking
-# the post-signin flow. trustHost=true alone is insufficient on Cloud Run.
+# the post-signin flow. trustHost=true alone is insufficient on Cloud Run
+# because Next.js standalone sets HOSTNAME=0.0.0.0 and Auth.js uses that
+# as the origin guess even with AUTH_TRUST_HOST=true.
 # ---------------------------------------------------------------------------
 CURRENT_ENV="$(gcloud run services describe "${SERVICE}" \
   --region "${REGION}" --project "${PROJECT_ID}" \
   --format='value(spec.template.spec.containers[0].env)' 2>/dev/null || true)"
 
-if [[ "${CURRENT_ENV}" == *"AUTH_URL"*"${URL}"* ]]; then
-  dim "==> AUTH_URL already matches ${URL} — skipping update."
+if [[ "${CURRENT_ENV}" == *"AUTH_URL"* ]]; then
+  EXISTING_AUTH_URL="$(echo "${CURRENT_ENV}" | tr ';' '\n' | grep "'name': 'AUTH_URL'" | grep -oE "'value': '[^']*'" | sed -E "s/'value': '(.*)'/\1/")"
+  dim "==> AUTH_URL already set to: ${EXISTING_AUTH_URL}"
+  dim "    (Cloud Run also exposes this service at: ${URL})"
+  dim "    To change canonical: gcloud run services update ${SERVICE} --update-env-vars 'AUTH_URL=<your-url>' --region ${REGION} --project ${PROJECT_ID}"
 else
-  bold "==> Setting AUTH_URL=${URL} on the service…"
+  bold "==> Setting AUTH_URL=${URL} on the service (initial deploy)…"
   gcloud run services update "${SERVICE}" \
     --region "${REGION}" --project "${PROJECT_ID}" \
     --update-env-vars "AUTH_URL=${URL}" --quiet >/dev/null
