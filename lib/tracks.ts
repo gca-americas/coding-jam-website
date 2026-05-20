@@ -28,7 +28,6 @@ export type Track = {
 
   starterRepo: string;
   codelabUrl: string;
-  slidesUrl: string;
   videoUrl: string;
   /** Hero screenshot of the polished demo. Empty = render the placeholder. */
   screenshotUrl: string;
@@ -77,7 +76,6 @@ export const TRACKS: Track[] = [
     ifStuck: ["context/image-gen-tryon.md"],
     starterRepo: "https://github.com/cuppibla/codingjam-glow-up",
     codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
-    slidesUrl: "#",
     videoUrl: "https://youtu.be/9tyZT5qqiCE",
     screenshotUrl: "",
     youtubeId: "9tyZT5qqiCE",
@@ -111,7 +109,6 @@ export const TRACKS: Track[] = [
     ifStuck: ["context/image-gen-stylization.md"],
     starterRepo: "https://github.com/cuppibla/codingjam-avatar-studio",
     codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
-    slidesUrl: "#",
     videoUrl: "https://youtu.be/d23zmrm1BCs",
     screenshotUrl: "",
     youtubeId: "d23zmrm1BCs",
@@ -148,7 +145,6 @@ export const TRACKS: Track[] = [
     ifStuck: ["context/calendar-layout.md", "context/personal-data-from-spectalk.md"],
     starterRepo: "https://github.com/cuppibla/codingjam-year-in-poetry",
     codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
-    slidesUrl: "#",
     videoUrl: "https://youtu.be/WviNDBWFeek",
     screenshotUrl: "",
     youtubeId: "WviNDBWFeek",
@@ -185,7 +181,6 @@ export const TRACKS: Track[] = [
     ifStuck: ["context/image-gen-food.md"],
     starterRepo: "https://github.com/cuppibla/codingjam-fridge-chef",
     codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
-    slidesUrl: "#",
     videoUrl: "https://youtu.be/dpzHIClbkyI",
     screenshotUrl: "",
     youtubeId: "dpzHIClbkyI",
@@ -222,7 +217,6 @@ export const TRACKS: Track[] = [
     ifStuck: ["context/persona-prompt-pattern.md"],
     starterRepo: "https://github.com/cuppibla/codingjam-moodjar",
     codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
-    slidesUrl: "#",
     videoUrl: "https://youtu.be/MqNxjZZlEEQ",
     screenshotUrl: "",
     youtubeId: "MqNxjZZlEEQ",
@@ -259,7 +253,6 @@ export const TRACKS: Track[] = [
     ifStuck: ["context/deploy-to-vercel.md", "context/self-writing-prompts.md"],
     starterRepo: "https://github.com/cuppibla/codingjam-my-corner",
     codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
-    slidesUrl: "#",
     videoUrl: "https://youtu.be/gPu54YWqy6k",
     screenshotUrl: "",
     youtubeId: "gPu54YWqy6k",
@@ -296,7 +289,6 @@ export const TRACKS: Track[] = [
     ifStuck: ["context/long-context-handling.md", "context/text-diff-pattern.md"],
     starterRepo: "https://github.com/cuppibla/codingjam-bulletproof",
     codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
-    slidesUrl: "#",
     videoUrl: "https://youtu.be/xTxW3euV9kw",
     screenshotUrl: "",
     youtubeId: "xTxW3euV9kw",
@@ -332,7 +324,6 @@ export const TRACKS: Track[] = [
     ifStuck: ["context/character-system-prompts.md", "context/character-guardrails.md"],
     starterRepo: "https://github.com/cuppibla/codingjam-character-chat",
     codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
-    slidesUrl: "#",
     videoUrl: "https://youtu.be/xFtSxF0ZM0g",
     screenshotUrl: "",
     youtubeId: "xFtSxF0ZM0g",

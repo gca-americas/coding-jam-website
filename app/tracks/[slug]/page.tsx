@@ -96,9 +96,6 @@ export default async function TrackPage({ params }: { params: Promise<{ slug: st
             <a href={track.starterRepo} target="_blank" rel="noreferrer" className="btn border border-white/40 text-white hover:bg-white/10">
               Starter repo
             </a>
-            <a href={track.slidesUrl} className="btn border border-white/40 text-white hover:bg-white/10">
-              Slide deck
-            </a>
             <a href={track.videoUrl} className="btn border border-white/40 text-white hover:bg-white/10">
               Demo video
             </a>
@@ -305,9 +302,6 @@ cd coding-jam/${track.starterRepo.split("/").pop() ?? track.slug}
               </a>
               <a href={track.starterRepo} target="_blank" rel="noreferrer" className="flex items-center justify-between text-sm font-medium text-ink hover:text-gblue px-3 py-1.5">
                 Starter repo <span>↗</span>
-              </a>
-              <a href={track.slidesUrl} className="flex items-center justify-between text-sm font-medium text-ink hover:text-gblue px-3 py-1.5">
-                Slide deck <span>→</span>
               </a>
               <a href={track.videoUrl} className="flex items-center justify-between text-sm font-medium text-ink hover:text-gblue px-3 py-1.5">
                 Demo video <span>→</span>

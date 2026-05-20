@@ -156,6 +156,27 @@ bold "==> Deployed:"
 echo "    ${URL}"
 echo
 
+# ---------------------------------------------------------------------------
+# 6b. Ensure AUTH_URL matches the discovered public URL.
+# Without this, Auth.js v5 inside the Cloud Run container falls back to
+# HOSTNAME+PORT (0.0.0.0:8080) when building redirect / error URLs, breaking
+# the post-signin flow. trustHost=true alone is insufficient on Cloud Run.
+# ---------------------------------------------------------------------------
+CURRENT_ENV="$(gcloud run services describe "${SERVICE}" \
+  --region "${REGION}" --project "${PROJECT_ID}" \
+  --format='value(spec.template.spec.containers[0].env)' 2>/dev/null || true)"
+
+if [[ "${CURRENT_ENV}" == *"AUTH_URL"*"${URL}"* ]]; then
+  dim "==> AUTH_URL already matches ${URL} — skipping update."
+else
+  bold "==> Setting AUTH_URL=${URL} on the service…"
+  gcloud run services update "${SERVICE}" \
+    --region "${REGION}" --project "${PROJECT_ID}" \
+    --update-env-vars "AUTH_URL=${URL}" --quiet >/dev/null
+  dim "    new revision created with AUTH_URL set"
+fi
+echo
+
 if [[ -n "${MOUNT_SECRETS}" ]]; then
   bold "==> Mounted secrets:"
   echo "    ${MOUNT_SECRETS}"

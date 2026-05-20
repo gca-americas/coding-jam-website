@@ -84,10 +84,10 @@ export default function OrganizerPage() {
         <div className="section-eyebrow">The Jam Session Kit</div>
         <h2 className="h-display text-3xl mt-2">Everything in the box.</h2>
         <p className="text-ash mt-3 max-w-2xl">
-          Each track ships with a starter, a Codelab, a slide deck outline, and a Spec Talk card. You facilitate;
-          the kit handles the rest. Pick any track to host — they&rsquo;re independent.
+          Each track ships with a starter, a Codelab, and a Spec Talk card. You facilitate; the kit handles the
+          rest. Pick any track to host — they&rsquo;re independent.
         </p>
-        <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="mt-8 grid sm:grid-cols-3 gap-4">
           <KitCard
             color="bg-gblue"
             title="Starter repo"
@@ -97,11 +97,6 @@ export default function OrganizerPage() {
             color="bg-gred"
             title="Codelab"
             body="A step-by-step guide that gets a participant from zero to a working app in 45 minutes. Drop-in friendly. Tested before doors open."
-          />
-          <KitCard
-            color="bg-gyellow"
-            title="Slide deck outline"
-            body="8–12 slides per track. The demo cue, the Spec Talk frame, the handoff. You write the deck; we give the spine."
           />
           <KitCard
             color="bg-ggreen"

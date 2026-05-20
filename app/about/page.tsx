@@ -79,16 +79,15 @@ export default function AboutPage() {
               <h2 className="h-display text-3xl mt-2">Turnkey, by design.</h2>
               <p className="text-ash mt-4">
                 A complete kit with starter code, frictionless API access, and an 8-track app curriculum. Every
-                track ships with the same four ingredients.
+                track ships with the same three ingredients.
               </p>
               <Link href="/organizer#kit" className="inline-flex items-center mt-4 text-sm font-medium text-gblue hover:underline">
                 See the full kit →
               </Link>
             </div>
-            <div className="sm:col-span-2 grid sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2 grid sm:grid-cols-3 gap-4">
               <KitTile color="bg-gblue" title="Starter repo" body="Scaffolded folder with context/, helper prompts, and pre-flight scripts." />
               <KitTile color="bg-gred" title="Codelab" body="A step-by-step guide that gets a participant from zero to a working app in 45 minutes." />
-              <KitTile color="bg-gyellow" title="Slide deck outline" body="8–12 slides per track — demo cue, Spec Talk frame, handoff." />
               <KitTile color="bg-ggreen" title="Spec Talk card" body="The 5 Spec Talk questions on one printable. Hang it in the room." />
             </div>
           </div>
