@@ -135,7 +135,7 @@ DEPLOY_FLAGS=(
   --max-instances 10
   --memory 512Mi
   --cpu 1
-  --set-env-vars "GOOGLE_CLOUD_PROJECT=${PROJECT_ID}"
+  --update-env-vars "GOOGLE_CLOUD_PROJECT=${PROJECT_ID}"
   --quiet
 )
 if [[ -n "${MOUNT_SECRETS}" ]]; then
