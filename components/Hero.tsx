@@ -1,15 +1,11 @@
 import Link from "next/link";
-import VideoPoster from "./VideoPoster";
-
-// Swap this constant to feature a different track's video in the hero.
-const HERO_VIDEO_ID = "dpzHIClbkyI"; // Track 4 — Fridge to Recipe
-const HERO_VIDEO_TITLE = "Fridge to Recipe — demo";
+import { TRACKS, colorClasses, trackLabel } from "@/lib/tracks";
 
 export default function Hero() {
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 dotted-bg opacity-50" />
-      <div className="container-page relative pt-16 pb-16 sm:pt-24 sm:pb-20">
+      <div className="container-page relative pt-16 pb-12 sm:pt-24 sm:pb-16">
         <div className="grid lg:grid-cols-12 gap-10 lg:gap-12 items-center">
           <div className="lg:col-span-7">
             <Link
@@ -19,7 +15,7 @@ export default function Hero() {
               <span className="h-1.5 w-1.5 rounded-full bg-ggreen animate-pulse" />
               <span>8 independent jams for GDG communities · What&rsquo;s a Coding Jam? →</span>
             </Link>
-            <h1 className="h-display text-5xl sm:text-7xl mt-6 leading-[1.02]">
+            <h1 className="font-display font-bold tracking-tight text-5xl sm:text-7xl mt-6 leading-[1.02] text-ink">
               Build with AI.<br />
               <GoogleColoredWord word="Together" />.<br />
               In two hours.
@@ -38,7 +34,6 @@ export default function Hero() {
                 I&rsquo;m an organizer
               </Link>
             </div>
-
             <div className="mt-10 flex flex-wrap gap-2">
               <Stat label="8 weekly jams" dotColor="bg-gblue" />
               <Stat label="2hr per session" dotColor="bg-gred" />
@@ -47,10 +42,31 @@ export default function Hero() {
             </div>
           </div>
 
+          {/* 4×2 track tile grid — fast-access navigator, doubles as visual balance for the headline. */}
           <div className="lg:col-span-5">
-            <VideoPoster id={HERO_VIDEO_ID} title={HERO_VIDEO_TITLE} />
-            <p className="mt-3 text-xs text-ash text-center sm:text-left">
-              ↑ Track 4 demo. <Link href="/#lineup" className="text-gblue hover:underline">All 8 →</Link>
+            <div className="grid grid-cols-4 gap-3">
+              {TRACKS.map((t) => {
+                const c = colorClasses[t.color];
+                return (
+                  <Link
+                    key={t.slug}
+                    href={`/tracks/${t.slug}`}
+                    aria-label={`Open Track ${trackLabel(t.number)} — ${t.project}`}
+                    className={`group relative aspect-square rounded-2xl ${c.bgSoft} border border-transparent hover:border-line hover:shadow-lift transition-all hover:-translate-y-1 hover:scale-[1.04] flex items-center justify-center overflow-hidden`}
+                  >
+                    <span className="text-4xl sm:text-5xl group-hover:scale-110 transition-transform" aria-hidden>
+                      {t.emoji}
+                    </span>
+                    <span className={`absolute top-1.5 left-2 text-[10px] font-mono font-bold tracking-widest ${c.text} opacity-80`}>
+                      {trackLabel(t.number)}
+                    </span>
+                    <span className={`absolute bottom-0 left-0 right-0 h-0.5 ${c.bg} opacity-50 group-hover:opacity-100 transition-opacity`} />
+                  </Link>
+                );
+              })}
+            </div>
+            <p className="mt-3 text-xs text-ash text-center">
+              Click a tile to dive in · or scroll for the demos
             </p>
           </div>
         </div>
@@ -70,7 +86,10 @@ function Stat({ label, dotColor }: { label: string; dotColor: string }) {
 
 /** Renders each letter in one of the four Google brand colors, like the Google logo. */
 function GoogleColoredWord({ word }: { word: string }) {
-  const colors = ["text-gblue", "text-gred", "text-gyellow", "text-gblue", "text-ggreen", "text-gred", "text-gyellow", "text-ggreen"];
+  const colors = [
+    "text-gblue", "text-gred", "text-gyellow", "text-gblue",
+    "text-ggreen", "text-gred", "text-gyellow", "text-ggreen",
+  ];
   return (
     <span>
       {word.split("").map((ch, i) => (

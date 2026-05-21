@@ -3,6 +3,7 @@ import Hero from "@/components/Hero";
 import TrackCard from "@/components/TrackCard";
 import ProjectCard from "@/components/ProjectCard";
 import ChapterBoard from "@/components/ChapterBoard";
+import DemoMarquee from "@/components/DemoMarquee";
 import { TRACKS } from "@/lib/tracks";
 import { listProjects, chapterStats } from "@/lib/projects";
 
@@ -14,6 +15,15 @@ export default async function Home() {
   return (
     <>
       <Hero />
+
+      {/* Builds in motion — auto-cycling reel of all 8 demos. Sits right under
+          the Hero so the "pitch → proof" rhythm reads top-to-bottom. */}
+      <section className="bg-white pb-12 sm:pb-16">
+        <DemoMarquee />
+        <p className="container-page mt-3 text-xs text-ash text-center">
+          ↑ Eight demos, on a loop. Hover to pause, click to watch.
+        </p>
+      </section>
 
       {/* The Lineup — the main event */}
       <section id="lineup" className="bg-cloud scroll-mt-20">
