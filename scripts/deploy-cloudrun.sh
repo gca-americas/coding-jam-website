@@ -20,6 +20,7 @@ REGION="${REGION:-us-central1}"
 SERVICE="${SERVICE:-codingjam-web}"
 RUNTIME_SA_NAME="${SERVICE}-runtime"
 RUNTIME_SA="${RUNTIME_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
+UPLOADS_BUCKET="${GCS_UPLOADS_BUCKET:-${PROJECT_ID}-uploads}"
 
 bold() { printf '\033[1m%s\033[0m\n' "$*"; }
 dim()  { printf '\033[2m%s\033[0m\n' "$*"; }
@@ -39,6 +40,7 @@ gcloud services enable \
   artifactregistry.googleapis.com \
   secretmanager.googleapis.com \
   firestore.googleapis.com \
+  storage.googleapis.com \
   --project="${PROJECT_ID}"
 echo
 
@@ -67,6 +69,38 @@ for ROLE in roles/datastore.user roles/secretmanager.secretAccessor; do
     --condition=None \
     --quiet >/dev/null
 done
+echo
+
+# ---------------------------------------------------------------------------
+# 3b. Cloud Storage bucket for screenshot uploads
+# ---------------------------------------------------------------------------
+# Public-read, uniform bucket-level access. The runtime SA gets object-admin
+# scoped to this bucket so we never widen permissions beyond what's needed.
+bold "==> Cloud Storage uploads bucket: ${UPLOADS_BUCKET}"
+if gcloud storage buckets describe "gs://${UPLOADS_BUCKET}" --project="${PROJECT_ID}" &>/dev/null; then
+  dim "    bucket exists"
+else
+  dim "    creating bucket…"
+  gcloud storage buckets create "gs://${UPLOADS_BUCKET}" \
+    --project="${PROJECT_ID}" \
+    --location="${REGION}" \
+    --uniform-bucket-level-access \
+    --quiet >/dev/null
+fi
+
+dim "    granting public read (allUsers → objectViewer)"
+gcloud storage buckets add-iam-policy-binding "gs://${UPLOADS_BUCKET}" \
+  --member=allUsers \
+  --role=roles/storage.objectViewer \
+  --project="${PROJECT_ID}" \
+  --quiet >/dev/null
+
+dim "    granting runtime SA write (objectAdmin on this bucket)"
+gcloud storage buckets add-iam-policy-binding "gs://${UPLOADS_BUCKET}" \
+  --member="serviceAccount:${RUNTIME_SA}" \
+  --role=roles/storage.objectAdmin \
+  --project="${PROJECT_ID}" \
+  --quiet >/dev/null
 echo
 
 # ---------------------------------------------------------------------------
@@ -135,7 +169,7 @@ DEPLOY_FLAGS=(
   --max-instances 10
   --memory 512Mi
   --cpu 1
-  --set-env-vars "GOOGLE_CLOUD_PROJECT=${PROJECT_ID}"
+  --set-env-vars "GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GCS_UPLOADS_BUCKET=${UPLOADS_BUCKET}"
   --quiet
 )
 if [[ -n "${MOUNT_SECRETS}" ]]; then
@@ -148,9 +182,21 @@ echo
 # ---------------------------------------------------------------------------
 # 6. Done — print URL and next steps
 # ---------------------------------------------------------------------------
-URL="$(gcloud run services describe "${SERVICE}" \
+# Cloud Run exposes the service under two equivalent hostnames (project-number
+# form and random-hash form). We pin to the project-number form so the OAuth
+# redirect URI is stable across re-deploys.
+PROJECT_NUMBER="$(gcloud projects describe "${PROJECT_ID}" \
+  --format='value(projectNumber)')"
+URL="https://${SERVICE}-${PROJECT_NUMBER}.${REGION}.run.app"
+
+# Auth.js needs an explicit AUTH_URL on Cloud Run — HOSTNAME=0.0.0.0 in the
+# container otherwise poisons the inferred base URL, and trustHost alone
+# isn't reliable behind Cloud Run's proxy.
+bold "==> Setting AUTH_URL=${URL}…"
+gcloud run services update "${SERVICE}" \
   --region "${REGION}" --project "${PROJECT_ID}" \
-  --format='value(status.url)')"
+  --update-env-vars "AUTH_URL=${URL}" \
+  --quiet >/dev/null
 
 bold "==> Deployed:"
 echo "    ${URL}"
