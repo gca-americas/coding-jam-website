@@ -1,12 +1,46 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { TRACKS, getTrack, colorClasses, trackLabel } from "@/lib/tracks";
+import { TRACKS, getTrack, colorClasses, trackLabel, CODING_JAM_STACK } from "@/lib/tracks";
 import { listProjects } from "@/lib/projects";
 import ProjectCard from "@/components/ProjectCard";
 import Timeline from "@/components/Timeline";
 
 export function generateStaticParams() {
   return TRACKS.map((t) => ({ slug: t.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const track = getTrack(slug);
+  if (!track) return {};
+
+  const title = `${track.project} — Coding Jam Track ${trackLabel(track.number)}`;
+  const description = `${track.tagline} · ${track.mmv.split(".")[0]}.`;
+  const image = track.youtubeId
+    ? `https://i.ytimg.com/vi/${track.youtubeId}/maxresdefault.jpg`
+    : "/og-default.png";
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      images: [{ url: image, width: 1280, height: 720, alt: `${track.project} demo` }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image],
+    },
+  };
 }
 
 // Track pages include a "builds shipped from this track" section that reads
@@ -31,7 +65,7 @@ export default async function TrackPage({ params }: { params: Promise<{ slug: st
   return (
     <>
       {/* Hero */}
-      <section className={`relative overflow-hidden bg-gradient-to-br ${c.gradient} text-white`}>
+      <section className={`relative overflow-hidden ${c.bg} text-white`}>
         <div className="absolute inset-0 dotted-bg opacity-20" />
         <div className="container-page relative py-16 sm:py-24">
           <Link href="/#lineup" className="inline-flex items-center gap-1.5 text-white/80 text-sm hover:text-white">
@@ -62,9 +96,6 @@ export default async function TrackPage({ params }: { params: Promise<{ slug: st
             <a href={track.starterRepo} target="_blank" rel="noreferrer" className="btn border border-white/40 text-white hover:bg-white/10">
               Starter repo
             </a>
-            <a href={track.slidesUrl} className="btn border border-white/40 text-white hover:bg-white/10">
-              Slide deck
-            </a>
             <a href={track.videoUrl} className="btn border border-white/40 text-white hover:bg-white/10">
               Demo video
             </a>
@@ -77,19 +108,22 @@ export default async function TrackPage({ params }: { params: Promise<{ slug: st
 
       <div className="container-page py-16 grid lg:grid-cols-3 gap-12">
         <div className="lg:col-span-2 space-y-12">
-          {/* What you'll build */}
-          <section>
-            <div className="section-eyebrow">In the room · 45 minutes</div>
-            <h2 className="h-display text-2xl mt-2">What you&rsquo;ll build</h2>
-            <p className="text-ink mt-4 leading-relaxed text-lg">{track.mmv}</p>
-          </section>
-
-          {/* Demo screenshot */}
+          {/* Demo — shown first: video sells the track in 3 seconds */}
           <section>
             <div className="section-eyebrow">The demo</div>
-            <h3 className="h-display text-2xl mt-2">What it looks like when it&rsquo;s working</h3>
+            <h2 className="h-display text-2xl mt-2">What it looks like when it&rsquo;s working</h2>
             <div className="mt-5">
-              {track.screenshotUrl ? (
+              {track.youtubeId ? (
+                <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-line shadow-lift">
+                  <iframe
+                    src={`https://www.youtube-nocookie.com/embed/${track.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${track.youtubeId}&controls=0&disablekb=1&modestbranding=1&rel=0&playsinline=1`}
+                    title={`${track.project} demo`}
+                    allow="autoplay; encrypted-media; picture-in-picture"
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full pointer-events-none"
+                  />
+                </div>
+              ) : track.screenshotUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={track.screenshotUrl}
@@ -108,17 +142,24 @@ export default async function TrackPage({ params }: { params: Promise<{ slug: st
                     {track.emoji}
                   </div>
                   <div className="relative text-center px-6">
-                    <div className={`section-eyebrow ${c.text}`}>Screenshot goes here</div>
+                    <div className={`section-eyebrow ${c.text}`}>Demo video goes here</div>
                     <p className="font-display font-semibold text-ink mt-2 text-lg">
                       Demo of <span className={c.text}>{track.project}</span>
                     </p>
                     <p className="text-xs text-ash mt-2 max-w-sm mx-auto">
-                      Drop a 16:9 image URL into <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-line text-[11px]">screenshotUrl</code> on this track in <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-line text-[11px]">lib/tracks.ts</code>.
+                      Drop the 11-char YouTube ID into <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-line text-[11px]">youtubeId</code> on this track in <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-line text-[11px]">lib/tracks.ts</code>.
                     </p>
                   </div>
                 </div>
               )}
             </div>
+          </section>
+
+          {/* What you'll build — text follows the visual */}
+          <section>
+            <div className="section-eyebrow">In the room · 45 minutes</div>
+            <h3 className="h-display text-2xl mt-2">What you&rsquo;ll build</h3>
+            <p className="text-ink mt-4 leading-relaxed text-lg">{track.mmv}</p>
           </section>
 
           {/* The moment it clicks */}
@@ -216,6 +257,15 @@ export default async function TrackPage({ params }: { params: Promise<{ slug: st
           <div className="card p-6">
             <div className="section-eyebrow">Tech you&rsquo;ll touch</div>
             <ul className="mt-4 space-y-2">
+              {CODING_JAM_STACK.map((t) => (
+                <li key={t} className="flex items-center gap-2 text-sm">
+                  <span className="h-1.5 w-1.5 rounded-full bg-ash" />
+                  <span className="text-ink">{t}</span>
+                </li>
+              ))}
+              <li className="text-xs font-mono uppercase tracking-widest text-ash pt-3 pb-1">
+                This track adds
+              </li>
               {track.tech.map((t) => (
                 <li key={t} className="flex items-center gap-2 text-sm">
                   <span className={`h-1.5 w-1.5 rounded-full ${c.bg}`} />
@@ -223,6 +273,17 @@ export default async function TrackPage({ params }: { params: Promise<{ slug: st
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div className="card p-6">
+            <div className="section-eyebrow">Run it yourself</div>
+            <p className="text-xs text-ash mt-2">After the jam, on your own machine.</p>
+            <pre className="mt-3 text-[11px] font-mono bg-cloud/60 border border-line rounded-lg p-3 overflow-x-auto leading-relaxed text-ink">
+{`git clone https://github.com/cuppibla/coding-jam
+cd coding-jam/${track.starterRepo.split("/").pop() ?? track.slug}
+# follow the codelab for Antigravity
+# setup + .env`}
+            </pre>
           </div>
 
           <div className="card p-6">
@@ -241,9 +302,6 @@ export default async function TrackPage({ params }: { params: Promise<{ slug: st
               </a>
               <a href={track.starterRepo} target="_blank" rel="noreferrer" className="flex items-center justify-between text-sm font-medium text-ink hover:text-gblue px-3 py-1.5">
                 Starter repo <span>↗</span>
-              </a>
-              <a href={track.slidesUrl} className="flex items-center justify-between text-sm font-medium text-ink hover:text-gblue px-3 py-1.5">
-                Slide deck <span>→</span>
               </a>
               <a href={track.videoUrl} className="flex items-center justify-between text-sm font-medium text-ink hover:text-gblue px-3 py-1.5">
                 Demo video <span>→</span>

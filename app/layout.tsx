@@ -3,10 +3,27 @@ import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 
+const SITE_TITLE = "GDG Coding Jams — Build with AI. Together. In two hours.";
+const SITE_DESC =
+  "Turnkey 2-hour AI build sessions for GDG communities. Show up, grab pizza, ship a real prototype with Google's AI tools.";
+
 export const metadata: Metadata = {
-  title: "GDG Coding Jams — Build with AI. Together. In two hours.",
-  description:
-    "Turnkey 2-hour AI build sessions for GDG communities. Show up, grab pizza, ship a real prototype with Google's AI tools.",
+  title: SITE_TITLE,
+  description: SITE_DESC,
+  openGraph: {
+    title: SITE_TITLE,
+    description: SITE_DESC,
+    type: "website",
+    siteName: "GDG Coding Jams",
+    // TODO: drop a 1200x630 PNG at public/og-default.png. Until then, falls back to no image.
+    images: [{ url: "/og-default.png", width: 1200, height: 630, alt: "GDG Coding Jams" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESC,
+    images: ["/og-default.png"],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

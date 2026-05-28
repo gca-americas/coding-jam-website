@@ -1,6 +1,8 @@
 # GDG Coding Jams
 
-A turnkey landing site for the GDG Coding Jams — eight independent 2-hour AI build sessions ("tracks"), an organizer playbook, and a community project showcase with a chapter hero board.
+A turnkey landing site for the GDG Coding Jams — eight independent 2-hour AI build sessions ("tracks") driven by an Antigravity codelab, an organizer playbook, and a community project showcase with a chapter hero board.
+
+> **The Build phase IS the codelab.** Participants run the [Antigravity codelab](https://github.com/cuppibla/coding-jam-codelab/blob/main/coding-jam/codelab.md) — Antigravity writes the code, they direct it via three spec docs (PRD / UI / Engineering). Six sub-phases inside ~75 min: Setup → Plan → Review → Build → API → Verify. "Fix the doc, not the code."
 
 ## Run it
 
@@ -144,3 +146,4 @@ The script is idempotent — re-run to redeploy after code changes or to push up
 - Colors: `#4285F4` blue, `#EA4335` red, `#FBBC04` yellow, `#34A853` green (defined as `gblue / gred / gyellow / ggreen` in Tailwind).
 - Type: Google Sans (Display + Text) loaded from Google Fonts.
 - Each track is themed with one of the four colors.
+- **Material 3 styling** — color is an accent, not a fill. Track cards have a neutral white surface, colored eyebrow + tinted icon plate + a thin colored bottom bar. Buttons follow M3 hierarchy: `.btn-google` (filled primary, solid blue), `.btn-tonal` (light-color background + dark-color text), `.btn-ghost` (outlined), `.btn-text` (no background until hover). The "Together." word in the hero is per-letter Google-colored, like the Google logo.

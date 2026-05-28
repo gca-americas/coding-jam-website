@@ -1,12 +1,13 @@
 import Link from "next/link";
 import Timeline from "@/components/Timeline";
+import CodelabPhases from "@/components/CodelabPhases";
 import { TRACKS, colorClasses, trackLabel, SPEC_TALK_QUESTIONS } from "@/lib/tracks";
 
 export default function OrganizerPage() {
   return (
     <>
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 diag-bg" />
+        <div className="absolute inset-0 dotted-bg opacity-50" />
         <div className="container-page relative py-20 sm:py-24">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-line text-xs text-ash shadow-soft">
             <span className="h-1.5 w-1.5 rounded-full bg-gred" /> For organizers
@@ -22,9 +23,59 @@ export default function OrganizerPage() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a href="#kit" className="btn-google">Get the Jam Session Kit</a>
+            <a href="#before-you-arrive" className="btn-ghost">Before you arrive</a>
             <a href="#timeline" className="btn-ghost">Pre-workshop timeline</a>
-            <a href="#per-session" className="btn-ghost">Per-session structure</a>
+            <a href="#gotchas" className="btn-ghost">Common gotchas</a>
           </div>
+        </div>
+      </section>
+
+      {/* Before you arrive */}
+      <section id="before-you-arrive" className="bg-cloud border-y border-line scroll-mt-20">
+        <div className="container-page py-20 grid lg:grid-cols-3 gap-12">
+          <div className="lg:col-span-1">
+            <div className="section-eyebrow">Before you arrive</div>
+            <h2 className="h-display text-3xl mt-2">A pre-flight checklist.</h2>
+            <p className="text-ash mt-4">
+              Drop this into your event description verbatim. Half the workshop time is currently lost to setup —
+              this checklist gives it back. Drop-ins without the prereqs are still welcome; pair them with a TA.
+            </p>
+            <p className="text-ash mt-3 text-sm italic border-l-2 border-line pl-3">
+              Tip: pin the checklist in the RSVP email 48 hours before doors open. Re-share at T-2 hours.
+            </p>
+          </div>
+          <ol className="lg:col-span-2 card divide-y divide-line">
+            <PreflightRow
+              n="1"
+              color="bg-gblue"
+              title="Install Antigravity"
+              body="Download the desktop app from antigravity.google. The Jam runs on Antigravity — without it, participants can't follow the codelab."
+            />
+            <PreflightRow
+              n="2"
+              color="bg-gred"
+              title="Install uv"
+              body={'macOS / Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh`. Windows: see astral.sh/uv. uv replaces pip and venv — much faster, fewer surprises.'}
+            />
+            <PreflightRow
+              n="3"
+              color="bg-gyellow"
+              title="GitHub account + Git installed"
+              body="Each starter is a GitHub repo. Participants clone it during Setup (codelab phase 1)."
+            />
+            <PreflightRow
+              n="4"
+              color="bg-ggreen"
+              title="Google account (for Gemini API)"
+              body="Used to create an API key at ai.google.dev. Free tier is enough for the workshop."
+            />
+            <PreflightRow
+              n="5"
+              color="bg-gblue"
+              title="Optional: GCP project + workshop credits"
+              body="Recommended when running an official GDG event — workshop credits cover the API spend and tie to the chapter KPI. Skip for casual jams."
+            />
+          </ol>
         </div>
       </section>
 
@@ -33,10 +84,10 @@ export default function OrganizerPage() {
         <div className="section-eyebrow">The Jam Session Kit</div>
         <h2 className="h-display text-3xl mt-2">Everything in the box.</h2>
         <p className="text-ash mt-3 max-w-2xl">
-          Each track ships with a starter, a Codelab, a slide deck outline, and a Spec Talk card. You facilitate;
-          the kit handles the rest. Pick any track to host — they&rsquo;re independent.
+          Each track ships with a starter, a Codelab, and a Spec Talk card. You facilitate; the kit handles the
+          rest. Pick any track to host — they&rsquo;re independent.
         </p>
-        <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="mt-8 grid sm:grid-cols-3 gap-4">
           <KitCard
             color="bg-gblue"
             title="Starter repo"
@@ -46,11 +97,6 @@ export default function OrganizerPage() {
             color="bg-gred"
             title="Codelab"
             body="A step-by-step guide that gets a participant from zero to a working app in 45 minutes. Drop-in friendly. Tested before doors open."
-          />
-          <KitCard
-            color="bg-gyellow"
-            title="Slide deck outline"
-            body="8–12 slides per track. The demo cue, the Spec Talk frame, the handoff. You write the deck; we give the spine."
           />
           <KitCard
             color="bg-ggreen"
@@ -69,6 +115,10 @@ export default function OrganizerPage() {
             <p className="text-ash mt-3">
               We keep the talking short and the building long. Organizers facilitate; the room creates. This shape
               repeats across every track — it&rsquo;s the muscle memory.
+            </p>
+            <p className="text-ash mt-3">
+              The Build phase IS the codelab — Antigravity does the typing, participants direct it through six
+              sub-phases (Setup, Plan, Review, Build, API, Verify).
             </p>
             <div className="mt-6 space-y-4">
               <TipBox color="bg-gblue/10 text-gblue" label="Pro tip">
@@ -125,8 +175,19 @@ export default function OrganizerPage() {
           <div className="mt-8 grid sm:grid-cols-4 gap-4">
             <PhaseCard n="1" color="bg-gblue" time="10 min" title="Demo" body="You ship the track's app live. Participants watch, no laptops. The 'this is what's possible' moment." />
             <PhaseCard n="2" color="bg-gred" time="10 min" title="Spec Talk" body="Walk the room through the 5 questions on the projector. Highlight the question this track emphasizes." />
-            <PhaseCard n="3" color="bg-gyellow" time="60-70 min" title="Build" body="Participants vibe code their version. You and TAs circulate. Help unblock; resist coding for them." />
+            <PhaseCard n="3" color="bg-gyellow" time="60-70 min" title="Build (codelab)" body="Participants run the codelab. Antigravity writes the code; they direct it. You and TAs circulate — unblock, don't code for them." />
             <PhaseCard n="4" color="bg-ggreen" time="20-30 min" title="Compare Notes" body="3 volunteer screen-shares. Celebrate the messy, the brilliant, the half-finished. Tease the polished version." />
+          </div>
+          <div className="mt-10">
+            <div className="section-eyebrow">Inside the Build phase</div>
+            <h3 className="h-display text-xl mt-2">Six codelab sub-phases.</h3>
+            <p className="text-sm text-ash mt-2 max-w-2xl">
+              The codelab runs ~48 minutes of structured time + ~20 minutes of slack for help, iteration, and
+              polish. Total ~75 minutes inside the 60–70 minute Build window with room to breathe.
+            </p>
+            <div className="mt-5">
+              <CodelabPhases />
+            </div>
           </div>
         </div>
       </section>
@@ -312,6 +373,44 @@ export default function OrganizerPage() {
         </div>
       </section>
 
+      {/* Common gotchas */}
+      <section id="gotchas" className="bg-cloud border-y border-line scroll-mt-20">
+        <div className="container-page py-20">
+          <div className="section-eyebrow">Common gotchas</div>
+          <h2 className="h-display text-3xl mt-2">What trips people up — and the fix.</h2>
+          <p className="text-ash mt-3 max-w-2xl">
+            Four issues that come up in almost every room. If a participant is stuck for more than 5 minutes,
+            check these first.
+          </p>
+          <div className="mt-8 grid sm:grid-cols-2 gap-4">
+            <GotchaCard
+              color="bg-gblue"
+              title="GCP credits not linked"
+              symptom="Gemini API call returns 403 / quota error halfway through Verify."
+              fix="During Setup, link workshop credits to the GCP project at console.cloud.google.com/billing. If you skipped GCP entirely, the free Gemini tier from ai.google.dev works for the codelab — just confirm the key is from there."
+            />
+            <GotchaCard
+              color="bg-gred"
+              title="API key not in .env"
+              symptom="App loads but every Gemini call returns 401."
+              fix="Open the project root, confirm `.env` exists (NOT `.env.example`), and the key is `GEMINI_API_KEY=...` with no quotes around the value. Restart the dev server after editing."
+            />
+            <GotchaCard
+              color="bg-gyellow"
+              title="Antigravity on Apple Silicon"
+              symptom="App opens but the agent panel hangs on first prompt."
+              fix="Make sure you downloaded the arm64 build, not Intel. Quit the app fully (Cmd-Q, not just close window) and reopen. If still stuck, check Activity Monitor that the process is `Apple` architecture."
+            />
+            <GotchaCard
+              color="bg-ggreen"
+              title="uv vs pip confusion"
+              symptom="Participant runs `pip install`, gets ModuleNotFoundError later."
+              fix="The codelab uses uv. Direct them to `uv sync` (installs deps from pyproject.toml) and `uv run <command>` (replaces `python <command>`). pip will silently install into the wrong environment."
+            />
+          </div>
+        </div>
+      </section>
+
       <section className="container-page py-20">
         <div className="card p-8 sm:p-12 text-center">
           <h2 className="h-display text-3xl">Got everything you need?</h2>
@@ -368,6 +467,33 @@ function TipBox({ color, label, children }: { color: string; label: string; chil
     <div className="card p-4">
       <span className={`chip ${color}`}>{label}</span>
       <p className="text-sm text-ink mt-2 leading-relaxed">{children}</p>
+    </div>
+  );
+}
+
+function PreflightRow({ n, color, title, body }: { n: string; color: string; title: string; body: string }) {
+  return (
+    <li className="flex gap-4 px-5 py-4">
+      <div className={`shrink-0 h-9 w-9 rounded-lg ${color} text-white flex items-center justify-center font-display font-bold`}>
+        {n}
+      </div>
+      <div className="min-w-0">
+        <div className="font-display font-semibold text-ink">{title}</div>
+        <p className="text-sm text-ash mt-1 leading-relaxed">{body}</p>
+      </div>
+    </li>
+  );
+}
+
+function GotchaCard({ color, title, symptom, fix }: { color: string; title: string; symptom: string; fix: string }) {
+  return (
+    <div className="card p-5">
+      <div className="flex items-center gap-2">
+        <span className={`h-2 w-2 rounded-full ${color}`} />
+        <div className="font-display font-semibold text-ink">{title}</div>
+      </div>
+      <p className="text-sm text-ash mt-3"><span className="font-semibold text-ink">Symptom:</span> {symptom}</p>
+      <p className="text-sm text-ash mt-2"><span className="font-semibold text-ink">Fix:</span> {fix}</p>
     </div>
   );
 }

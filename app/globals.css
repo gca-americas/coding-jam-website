@@ -34,13 +34,24 @@ body {
     @apply btn bg-ink text-white hover:shadow-lift hover:-translate-y-0.5;
   }
 
+  /* M3 filled button — primary action. Solid Google blue. */
   .btn-google {
-    @apply btn text-white shadow-soft hover:shadow-lift hover:-translate-y-0.5;
-    background: linear-gradient(90deg, #4285f4 0%, #34a853 33%, #fbbc04 66%, #ea4335 100%);
+    @apply btn bg-gblue text-white hover:bg-gblue/90 hover:shadow-lift;
   }
 
+  /* M3 tonal button — secondary action. Light-color background, dark-color text. */
+  .btn-tonal {
+    @apply btn bg-gblue/10 text-gblue hover:bg-gblue/15;
+  }
+
+  /* M3 outlined / ghost button — tertiary action. */
   .btn-ghost {
     @apply btn border border-line bg-white text-ink hover:bg-cloud;
+  }
+
+  /* M3 text button — quaternary action. No background until hover. */
+  .btn-text {
+    @apply btn text-ink hover:bg-ink/5;
   }
 
   .chip {

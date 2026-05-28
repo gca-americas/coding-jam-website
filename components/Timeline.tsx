@@ -26,15 +26,15 @@ const items: Item[] = [
     color: "red",
   },
   {
-    range: "0:15 – 0:20",
-    title: "Form a group",
-    body: "Pair up, group up, or fly solo. The room collaboratively scopes the build by prompting an LLM on the projector together.",
+    range: "0:15 – 0:25",
+    title: "Spec Talk",
+    body: "Walk the 5 questions on the projector. The output is a one-page PRD that Antigravity will turn into UI + engineering docs.",
     color: "yellow",
   },
   {
-    range: "0:20 – 1:30",
-    title: "Hacking",
-    body: "Fork the starter, get API keys, start building. Deep work, collaboration, experimenting with LLMs, debugging together. No judges.",
+    range: "0:25 – 1:30",
+    title: "Build (codelab)",
+    body: "Participants run the codelab. Antigravity writes the code; they direct it. Six phases inside this hour: Setup → Plan → Review → Build → API → Verify. Fix the doc, not the code.",
     color: "green",
   },
   {
