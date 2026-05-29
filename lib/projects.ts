@@ -27,7 +27,7 @@ export type Project = {
   demoUrl?: string;
   videoUrl?: string;
   screenshotUrl?: string;
-  doctrineScreenshotUrl?: string;
+  description?: string;
   surprise: string;
   /** ISO 8601 string. Sorts lexicographically the same way real dates do. */
   submittedAt: string;
@@ -118,15 +118,36 @@ export async function addProject(p: Omit<Project, "id" | "submittedAt">): Promis
   return backend.addProject(p);
 }
 
+/**
+ * Display normalization: trim, collapse whitespace, and force the "GDG " prefix
+ * to uppercase. Preserves the rest of the user's casing (so "GDG NYC" stays
+ * "GDG NYC", not "Gdg Nyc"). Use this on write so new submissions look clean.
+ */
+export function normalizeChapter(input: string): string {
+  const collapsed = input.replace(/\s+/g, " ").trim();
+  return collapsed.replace(/^gdg\b/i, "GDG");
+}
+
+/**
+ * Match key for grouping chapters case-insensitively. Two chapters that
+ * normalize to the same key are treated as the same chapter, regardless of
+ * how each submitter typed it.
+ */
+export function chapterMatchKey(chapter: string, country: string): string {
+  return `${chapter.replace(/\s+/g, " ").trim().toLowerCase()}__${country.trim().toLowerCase()}`;
+}
+
 export function chapterStats(projects: ReadonlyArray<PublicProject | Project>): ChapterStat[] {
   const map = new Map<string, ChapterStat>();
   for (const p of projects) {
-    const key = `${p.chapter}__${p.country}`;
+    const key = chapterMatchKey(p.chapter, p.country);
     const cur = map.get(key);
     if (cur) {
       cur.count += 1;
     } else {
-      map.set(key, { chapter: p.chapter, country: p.country, count: 1 });
+      // First sighting wins the display label — keeps the canonical form stable
+      // even if later submissions arrive with messier casing.
+      map.set(key, { chapter: normalizeChapter(p.chapter), country: p.country, count: 1 });
     }
   }
   return [...map.values()].sort((a, b) => b.count - a.count);

@@ -2,8 +2,11 @@ import { PublicProject } from "@/lib/projects";
 import { TRACKS, colorClasses, trackLabel } from "@/lib/tracks";
 
 export default function ProjectCard({ project }: { project: PublicProject }) {
+  const isCustom = project.trackNumber === 0;
   const track = TRACKS.find((t) => t.number === project.trackNumber);
   const c = track ? colorClasses[track.color] : colorClasses.blue;
+  const trackChipLabel = isCustom ? "Built their own" : `Track ${trackLabel(project.trackNumber)}`;
+  const fallbackEmoji = isCustom ? "🛠️" : track?.emoji ?? "✨";
 
   return (
     <article className="card card-hover overflow-hidden flex flex-col">
@@ -18,12 +21,12 @@ export default function ProjectCard({ project }: { project: PublicProject }) {
         ) : (
           <>
             <div className="absolute inset-0 dotted-bg opacity-30" />
-            <div className="absolute right-4 bottom-3 text-7xl opacity-30">{track?.emoji ?? "✨"}</div>
+            <div className="absolute right-4 bottom-3 text-7xl opacity-30">{fallbackEmoji}</div>
           </>
         )}
         <div className="relative flex items-start justify-between gap-2">
           <span className="chip bg-white/25 text-white backdrop-blur-sm shrink-0">
-            Track {trackLabel(project.trackNumber)}
+            {trackChipLabel}
           </span>
           <span className="chip bg-white/25 text-white backdrop-blur-sm truncate max-w-[60%]" title={`${project.chapter} · ${project.country}`}>
             {project.chapter}
@@ -52,27 +55,39 @@ export default function ProjectCard({ project }: { project: PublicProject }) {
             <div className="font-medium text-ink truncate">{project.builderName}</div>
           </div>
         </div>
+        {project.description && (
+          <p className="mt-3 text-sm text-ink leading-relaxed">
+            {project.description}
+          </p>
+        )}
         {project.surprise && (
           <p className="mt-3 text-sm text-ink italic leading-relaxed border-l-2 border-line pl-3">
             &ldquo;{project.surprise}&rdquo;
           </p>
         )}
-        <div className="mt-auto pt-4 flex items-center gap-3 text-xs">
+        <div className="mt-auto pt-4 space-y-3">
           {project.demoUrl && (
-            <a className="text-gblue hover:underline font-medium" href={project.demoUrl} target="_blank" rel="noreferrer">
+            <a
+              href={project.demoUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center gap-1.5 w-full px-4 py-2 rounded-lg bg-gblue text-white text-sm font-semibold hover:bg-gblue/90 transition-colors shadow-soft"
+            >
               Live demo ↗
             </a>
           )}
-          {project.repoUrl && (
-            <a className="text-ash hover:text-ink font-medium" href={project.repoUrl} target="_blank" rel="noreferrer">
-              Repo
-            </a>
-          )}
-          {project.videoUrl && (
-            <a className="text-ash hover:text-ink font-medium" href={project.videoUrl} target="_blank" rel="noreferrer">
-              Video
-            </a>
-          )}
+          <div className="flex items-center gap-3 text-xs">
+            {project.repoUrl && (
+              <a className="text-ash hover:text-ink font-medium" href={project.repoUrl} target="_blank" rel="noreferrer">
+                Repo
+              </a>
+            )}
+            {project.videoUrl && (
+              <a className="text-ash hover:text-ink font-medium" href={project.videoUrl} target="_blank" rel="noreferrer">
+                Video
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </article>

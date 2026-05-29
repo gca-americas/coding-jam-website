@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type TrackOption = { number: number; project: string };
@@ -11,9 +11,45 @@ type Builder = {
   image: string | null;
 };
 
-const COUNTRIES: Array<{ name: string }> = [
-  { name: "United States" },
-  { name: "Canada" },
+// Sovereign states in North & South America. Add as needed — order is North
+// (US/Canada first as the most common), then alphabetical Latin America &
+// Caribbean, then South America.
+const COUNTRIES: string[] = [
+  "United States",
+  "Canada",
+  "Mexico",
+  "Antigua and Barbuda",
+  "Bahamas",
+  "Barbados",
+  "Belize",
+  "Costa Rica",
+  "Cuba",
+  "Dominica",
+  "Dominican Republic",
+  "El Salvador",
+  "Grenada",
+  "Guatemala",
+  "Haiti",
+  "Honduras",
+  "Jamaica",
+  "Nicaragua",
+  "Panama",
+  "Saint Kitts and Nevis",
+  "Saint Lucia",
+  "Saint Vincent and the Grenadines",
+  "Trinidad and Tobago",
+  "Argentina",
+  "Bolivia",
+  "Brazil",
+  "Chile",
+  "Colombia",
+  "Ecuador",
+  "Guyana",
+  "Paraguay",
+  "Peru",
+  "Suriname",
+  "Uruguay",
+  "Venezuela",
 ];
 
 export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[]; builder: Builder }) {
@@ -22,14 +58,48 @@ export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[];
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  const [screenshotUrl, setScreenshotUrl] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({ error: "Upload failed" }));
+        throw new Error(j.error || "Upload failed");
+      }
+      const j = (await res.json()) as { url: string };
+      setScreenshotUrl(j.url);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function clearScreenshot() {
+    setScreenshotUrl("");
+    setUploadError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
 
     const form = new FormData(e.currentTarget);
-    const country = String(form.get("country") || "United States");
-    const safeCountry = COUNTRIES.find((c) => c.name === country)?.name ?? COUNTRIES[0].name;
+    const country = String(form.get("country") || COUNTRIES[0]);
+    const safeCountry = COUNTRIES.includes(country) ? country : COUNTRIES[0];
     const payload = {
       // Identity stamped server-side from the verified session — fields below are NOT trusted.
       trackNumber: Number(form.get("trackNumber")),
@@ -39,8 +109,8 @@ export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[];
       repoUrl: String(form.get("repoUrl") || "").trim(),
       demoUrl: String(form.get("demoUrl") || "").trim(),
       videoUrl: String(form.get("videoUrl") || "").trim(),
-      screenshotUrl: String(form.get("screenshotUrl") || "").trim(),
-      doctrineScreenshotUrl: String(form.get("doctrineScreenshotUrl") || "").trim(),
+      screenshotUrl,
+      description: String(form.get("description") || "").trim(),
       surprise: String(form.get("surprise") || "").trim(),
     };
 
@@ -103,13 +173,14 @@ export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[];
       {/* The build */}
       <Section title="The build" eyebrow="Step 1">
         <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Which track?" hint="Pick the track this project comes from.">
+          <Field label="Which track?" hint="Pick the track this project comes from — or choose 'I built my own' for an off-track build.">
             <select name="trackNumber" required className="input" defaultValue="1">
               {tracks.map((t) => (
                 <option key={t.number} value={t.number}>
                   Track {t.number.toString().padStart(2, "0")} — {t.project}
                 </option>
               ))}
+              <option value="0">✨ I built my own</option>
             </select>
           </Field>
           <Field label="Project name" hint="What you called it. Make it sing.">
@@ -124,24 +195,14 @@ export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[];
           <Field label="GDG city chapter" hint="e.g. GDG NYC, GDG Toronto, GDG Seattle">
             <input name="chapter" required placeholder="GDG Seattle" className="input" />
           </Field>
-          <Field label="Country">
-            <div className="flex gap-2">
-              {COUNTRIES.map((c, i) => (
-                <label
-                  key={c.name}
-                  className="group flex-1 cursor-pointer rounded-xl border border-line bg-white px-4 py-3 hover:bg-cloud has-[:checked]:border-gblue has-[:checked]:ring-2 has-[:checked]:ring-gblue/20 has-[:checked]:bg-gblue/5 transition-all text-center"
-                >
-                  <input
-                    type="radio"
-                    name="country"
-                    value={c.name}
-                    defaultChecked={i === 0}
-                    className="sr-only"
-                  />
-                  <span className="text-sm font-medium text-ink">{c.name}</span>
-                </label>
+          <Field label="Country" hint="North & South America only.">
+            <select name="country" required defaultValue="United States" className="input">
+              {COUNTRIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
-            </div>
+            </select>
           </Field>
         </div>
       </Section>
@@ -152,23 +213,74 @@ export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[];
           <Field label="Repo URL" hint="GitHub, GitLab, Codeberg — anywhere public.">
             <input type="url" name="repoUrl" required placeholder="https://github.com/you/your-build" className="input" />
           </Field>
-          <Field label="Live demo URL" hint="Cloud Run / Vercel / wherever it's running.">
-            <input type="url" name="demoUrl" placeholder="https://your-build.run.app" className="input" />
-          </Field>
           <Field label="Video / walkthrough URL" hint="YouTube, Loom, anything embeddable.">
             <input type="url" name="videoUrl" placeholder="https://youtu.be/..." className="input" />
           </Field>
-          <Field label="Screenshot URL" hint="A hero image for your project card.">
-            <input type="url" name="screenshotUrl" placeholder="https://.../screenshot.png" className="input" />
-          </Field>
         </div>
-        <Field label="Doctrine moment screenshot" hint="The drift-refusal, the &lsquo;pet remembers me&rsquo;, or whatever the doctrine made click.">
-          <input type="url" name="doctrineScreenshotUrl" placeholder="https://.../doctrine-moment.png" className="input" />
+
+        <Field label="Screenshot" hint="A hero image for your project card. PNG, JPG, WebP, or GIF — up to 8 MB.">
+          <div className="space-y-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              onChange={onFileChange}
+              disabled={uploading}
+              className="block w-full text-sm text-ash file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gblue/10 file:text-gblue hover:file:bg-gblue/20 disabled:opacity-60"
+            />
+            {uploading && <p className="text-xs text-ash">Uploading…</p>}
+            {uploadError && (
+              <p className="text-xs text-gred">{uploadError}</p>
+            )}
+            {screenshotUrl && !uploading && (
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-cloud/60 border border-line">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={screenshotUrl}
+                  alt="Screenshot preview"
+                  className="h-20 w-32 object-cover rounded-md border border-line"
+                />
+                <div className="flex-1 min-w-0 text-xs">
+                  <div className="font-medium text-ink">Uploaded</div>
+                  <div className="text-ash truncate" title={screenshotUrl}>
+                    {screenshotUrl}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={clearScreenshot}
+                    className="mt-1 text-gred hover:underline font-medium"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </Field>
+
+        <Field label="Live demo URL (optional)" hint="Cloud Run / Vercel / wherever it's running.">
+          <input type="url" name="demoUrl" placeholder="https://your-build.run.app" className="input" />
+        </Field>
+      </Section>
+
+      {/* The pitch */}
+      <Section title="The pitch" eyebrow="Step 4">
+        <Field
+          label="What does your project do?"
+          hint="2–4 sentences. What it is, who it&rsquo;s for, the cool part. Skip the build story — that&rsquo;s the next field."
+        >
+          <textarea
+            name="description"
+            rows={4}
+            maxLength={500}
+            placeholder="Mood Jar lets you type how you're feeling and drops a tiny kawaii token into a glass jar. The jar fills up over the week — a quiet, visual mood log without the journaling pressure."
+            className="input resize-none"
+          />
         </Field>
       </Section>
 
       {/* The reflection */}
-      <Section title="The reflection" eyebrow="Step 4">
+      <Section title="The reflection" eyebrow="Step 5">
         <Field
           label="What surprised you?"
           hint="1–2 sentences. The thing you didn&rsquo;t expect. This is the most-read field on the showcase."
@@ -194,7 +306,7 @@ export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[];
         <p className="text-xs text-ash">
           By submitting, you confirm the links you&rsquo;re sharing are public and don&rsquo;t contain secrets.
         </p>
-        <button disabled={submitting} className="btn-google disabled:opacity-60">
+        <button disabled={submitting || uploading} className="btn-google disabled:opacity-60">
           {submitting ? "Submitting…" : "Ship it →"}
         </button>
       </div>

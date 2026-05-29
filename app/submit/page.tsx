@@ -49,7 +49,7 @@ export default async function SubmitPage() {
             <ul className="mt-4 space-y-3 text-sm text-ink">
               <li className="flex gap-2"><span className="text-gblue font-bold">1.</span><span><b>A live URL.</b> Even half-finished. A clickable demo beats a clean README every time.</span></li>
               <li className="flex gap-2"><span className="text-gred font-bold">2.</span><span><b>Your surprise.</b> 1-2 sentences on what you didn&rsquo;t expect. Other builders learn from this most.</span></li>
-              <li className="flex gap-2"><span className="text-gyellow font-bold">3.</span><span><b>The doctrine moment.</b> Screenshot of the drift-refusal, the &lsquo;pet remembers me&rsquo;, or your bot getting cracked.</span></li>
+              <li className="flex gap-2"><span className="text-gyellow font-bold">3.</span><span><b>A short pitch.</b> 2-4 sentences on what your project does and who it&rsquo;s for. Helps people decide what to click on.</span></li>
               <li className="flex gap-2"><span className="text-ggreen font-bold">4.</span><span><b>Your chapter.</b> Where in the world is the jam happening? Pin your GDG on the map.</span></li>
             </ul>
           </div>

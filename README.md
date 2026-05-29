@@ -27,6 +27,7 @@ Open `http://localhost:3000`.
 | `/showcase` | Community builds, filterable by track + chapter |
 | `/submit` | Sign in with Google → in-site form to submit a build |
 | `/api/projects` | `GET` lists projects · `POST` creates one (requires session) |
+| `/api/upload` | `POST` uploads a screenshot to Cloud Storage (requires session) |
 | `/api/auth/*` | Auth.js (NextAuth v5) handlers |
 
 ## Setting up Google sign-in
@@ -60,11 +61,12 @@ For production, repeat with your production origin (e.g. `https://codingjams.exa
 
 ## Data
 
-- `lib/tracks.ts` — single source of truth for the 8 tracks (project, tagline, 45-min build, the moment it clicks, Spec Talk emphasis, polished pull-ins, codelab URL).
-- `lib/projects.ts` — storage **dispatcher** + types + helpers. `listProjects()` + `addProject()` are the only entry points the rest of the app uses.
+- `lib/tracks.ts` — single source of truth for the 8 tracks (project, tagline, 45-min build, the moment it clicks, Spec Talk emphasis, polished pull-ins, codelab URL). Submissions may also use `trackNumber=0` for **"I built my own"** (off-track / custom builds).
+- `lib/projects.ts` — storage **dispatcher** + types + helpers. `listProjects()` + `addProject()` are the only entry points the rest of the app uses. Also exports `normalizeChapter()` and `chapterMatchKey()` so chapter strings group case-insensitively ("GDG Boston" and "gdg boston" are one chapter on the hero board).
 - `lib/projects-fs.ts` — local JSON-file backend (reads/writes `data/projects.json`).
 - `lib/projects-firestore.ts` — Firestore backend.
 - `lib/firestore.ts` — Firestore client singleton, only loaded when the Firestore backend is active.
+- `lib/uploads.ts` — Cloud Storage upload helper. Accepts `image/png|jpeg|webp|gif` up to 8 MB, returns a public `https://storage.googleapis.com/<bucket>/<object>` URL. Reads `GCS_UPLOADS_BUCKET` at request time.
 - `data/projects.json` — seed data + the live store when running in local mode.
 
 ### Storage backend selection
@@ -107,6 +109,16 @@ The site stores community project submissions in Firestore Native mode on GCP pr
 
 No `.env` needed — the runtime service account is auto-picked up by ADC. Just make sure the runtime SA has `roles/datastore.user` on `codingjam-americas`. The `GOOGLE_CLOUD_PROJECT` env var is set automatically on GCP runtimes.
 
+## Screenshot uploads (Cloud Storage)
+
+The submit form uploads a hero image directly to a public-read GCS bucket via `/api/upload` (server-relay, session-gated). The deploy script provisions the bucket and IAM automatically; for **local** dev:
+
+1. Set `GCS_UPLOADS_BUCKET` in `.env.local` (default in prod: `codingjam-americas-uploads`).
+2. `gcloud auth application-default login` so the SDK can write as your user.
+3. Your account needs `roles/storage.objectAdmin` on the bucket (the runtime SA already has it).
+
+Without these, the rest of the form still works — only the upload returns a clear `Upload bucket is not configured` error.
+
 ## Deploying to Cloud Run
 
 The site ships as a standalone Next.js container, deployed via Cloud Build → Artifact Registry → Cloud Run. The service is **public** (anyone can browse); Google sign-in only gates the `/submit` form.
@@ -123,13 +135,15 @@ bash scripts/deploy-cloudrun.sh
 ```
 
 That single command:
-1. Enables `run`, `cloudbuild`, `artifactregistry`, `secretmanager`, `firestore` APIs (no-op if already on).
+1. Enables `run`, `cloudbuild`, `artifactregistry`, `secretmanager`, `firestore`, `storage` APIs (no-op if already on).
 2. Creates a runtime service account `codingjam-web-runtime@…` if missing.
 3. Grants it `roles/datastore.user` (Firestore) + `roles/secretmanager.secretAccessor`.
-4. Pushes / updates the 3 auth values from `.env.local` into Secret Manager (`auth-secret`, `auth-google-id`, `auth-google-secret`).
-5. Builds the Docker image via Cloud Build (uses our `Dockerfile`).
-6. Deploys to Cloud Run, mounts the secrets as env vars, sets `--allow-unauthenticated`.
-7. Prints the service URL and the OAuth callback you need to register.
+4. Creates the **uploads bucket** (`<project>-uploads`) with uniform bucket-level access, grants `allUsers:objectViewer` (public read) + the runtime SA `roles/storage.objectAdmin` scoped to the bucket.
+5. Pushes / updates the 3 auth values from `.env.local` into Secret Manager (`auth-secret`, `auth-google-id`, `auth-google-secret`).
+6. Builds the Docker image via Cloud Build (uses our `Dockerfile`).
+7. Deploys to Cloud Run, mounts the secrets as env vars, sets `GOOGLE_CLOUD_PROJECT` + `GCS_UPLOADS_BUCKET`, sets `--allow-unauthenticated`.
+8. Pins `AUTH_URL` to the **project-number** URL form (`https://<service>-<project-number>.<region>.run.app`) so the OAuth redirect URI is stable across re-deploys. Auth.js v5 inside the Cloud Run container can't infer the public URL reliably (the standalone Next.js image sets `HOSTNAME=0.0.0.0`, which poisons the guess even with `trustHost=true`).
+9. Prints the service URL and the OAuth callback you need to register.
 
 **Last manual step (after first deploy):**
 Add the printed `https://<service>-<hash>.run.app/api/auth/callback/google` to the **Authorized redirect URIs** of your Google OAuth client at [console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials?project=codingjam-americas). Required only once per service URL.
