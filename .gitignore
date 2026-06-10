@@ -17,6 +17,16 @@ dist/
 .env.production.local
 !.env.local.example
 
+# --- GCP service-account keys (defensive — never commit these) ---------------
+*-service-account.json
+service-account*.json
+*-key.json
+
+# --- Local-only data stores --------------------------------------------------
+# Admin allowlist for local dev — bootstrapped via `node scripts/seed-admin.mjs`.
+# Contains emails; each developer seeds their own, never share via git.
+data/admins.json
+
 # --- Logs --------------------------------------------------------------------
 *.log
 npm-debug.log*
