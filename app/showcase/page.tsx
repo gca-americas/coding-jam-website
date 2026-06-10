@@ -62,7 +62,7 @@ export default async function ShowcasePage({ searchParams }: { searchParams: Pro
                 <FilterLink
                   key={t.slug}
                   href={`/showcase?track=${t.number}`}
-                  label={`T${trackLabel(t.number)} · ${t.project.split(" ")[0]}`}
+                  label={`T${trackLabel(t.number)} · ${t.project}`}
                   active={trackFilter === t.number}
                   color={colorClasses[t.color].text}
                   dot={colorClasses[t.color].bg}

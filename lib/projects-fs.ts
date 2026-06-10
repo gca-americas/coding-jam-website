@@ -34,3 +34,53 @@ export async function addProject(p: Omit<Project, "id" | "submittedAt">): Promis
   await writeAll(all);
   return project;
 }
+
+export async function listProjectsByEmail(email: string): Promise<Project[]> {
+  const all = await listProjectsRaw();
+  return all.filter(
+    (p) =>
+      p.submittedByEmail?.toLowerCase() === email ||
+      p.collaboratorEmails?.some((e) => e.toLowerCase() === email),
+  );
+}
+
+export async function listProjectsByProfileId(id: string): Promise<Project[]> {
+  const all = await listProjectsRaw();
+  return all.filter(
+    (p) =>
+      p.submitterProfileId === id ||
+      p.collaboratorProfileIds?.includes(id),
+  );
+}
+
+export async function getProjectById(id: string): Promise<Project | null> {
+  const all = await readAll();
+  return all.find((p) => p.id === id) ?? null;
+}
+
+export async function updateProject(
+  id: string,
+  patch: Partial<Omit<Project, "id" | "submittedAt">>,
+): Promise<Project | null> {
+  const all = await readAll();
+  const idx = all.findIndex((p) => p.id === id);
+  if (idx === -1) return null;
+  // Strip undefined fields from the patch so we don't accidentally blow away
+  // existing values when the caller passes `{ foo: undefined }`.
+  const clean: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(patch)) {
+    if (v !== undefined) clean[k] = v;
+  }
+  const updated: Project = { ...all[idx], ...clean } as Project;
+  all[idx] = updated;
+  await writeAll(all);
+  return updated;
+}
+
+export async function deleteProject(id: string): Promise<boolean> {
+  const all = await readAll();
+  const next = all.filter((p) => p.id !== id);
+  if (next.length === all.length) return false;
+  await writeAll(next);
+  return true;
+}

@@ -21,9 +21,15 @@ export type Project = {
   builderImage?: string;
   /** Private — verified Google email of the submitter. Never displayed publicly. */
   submittedByEmail?: string;
+  /** Private — optional collaborator emails (lowercased, deduped). Powers /me badge credit. */
+  collaboratorEmails?: string[];
+  /** Public — opaque hash of submittedByEmail. Used as the /u/[id] slug. */
+  submitterProfileId?: string;
+  /** Public — opaque hashes of collaborator emails. Used to credit collaborators on /u/[id]. */
+  collaboratorProfileIds?: string[];
   chapter: string;
   country: string;
-  repoUrl: string;
+  repoUrl?: string;
   demoUrl?: string;
   videoUrl?: string;
   screenshotUrl?: string;
@@ -34,7 +40,7 @@ export type Project = {
 };
 
 /** Public-safe view of a project — strips fields that should never reach the client. */
-export type PublicProject = Omit<Project, "submittedByEmail">;
+export type PublicProject = Omit<Project, "submittedByEmail" | "collaboratorEmails">;
 
 export type ChapterStat = {
   chapter: string;
@@ -47,6 +53,11 @@ export type StorageBackend = "firestore" | "local";
 type BackendModule = {
   listProjectsRaw: () => Promise<Project[]>;
   addProject: (p: Omit<Project, "id" | "submittedAt">) => Promise<Project>;
+  listProjectsByEmail: (email: string) => Promise<Project[]>;
+  listProjectsByProfileId: (id: string) => Promise<Project[]>;
+  getProjectById: (id: string) => Promise<Project | null>;
+  updateProject: (id: string, patch: Partial<Omit<Project, "id" | "submittedAt">>) => Promise<Project | null>;
+  deleteProject: (id: string) => Promise<boolean>;
 };
 
 function pickBackend(): StorageBackend {
@@ -76,9 +87,43 @@ function getBackend(): Promise<BackendModule> {
 }
 
 export function toPublic(p: Project): PublicProject {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { submittedByEmail, ...rest } = p;
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  const { submittedByEmail, collaboratorEmails, ...rest } = p;
+  /* eslint-enable @typescript-eslint/no-unused-vars */
   return rest;
+}
+
+/**
+ * All projects where the given email matches either the submitter or a credited
+ * collaborator. Used by the /me page. Email comparison is case-insensitive —
+ * we lowercase on write, but be defensive on read too.
+ */
+export async function listProjectsByEmail(email: string): Promise<Project[]> {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return [];
+  try {
+    const backend = await getBackend();
+    return await backend.listProjectsByEmail(normalized);
+  } catch (err) {
+    console.error(`[projects] listProjectsByEmail from ${ACTIVE_BACKEND} failed — returning empty.`, err);
+    return [];
+  }
+}
+
+/**
+ * All projects where the given opaque profile-id matches either the submitter
+ * or a credited collaborator. Used by /u/[id] public profile pages.
+ */
+export async function listProjectsByProfileId(id: string): Promise<Project[]> {
+  const normalized = id.trim().toLowerCase();
+  if (!normalized) return [];
+  try {
+    const backend = await getBackend();
+    return await backend.listProjectsByProfileId(normalized);
+  } catch (err) {
+    console.error(`[projects] listProjectsByProfileId from ${ACTIVE_BACKEND} failed — returning empty.`, err);
+    return [];
+  }
 }
 
 /** Public view — for surfaces rendered to anyone (home, showcase, track pages). */
@@ -116,6 +161,24 @@ export async function listProjectsRaw(): Promise<Project[]> {
 export async function addProject(p: Omit<Project, "id" | "submittedAt">): Promise<Project> {
   const backend = await getBackend();
   return backend.addProject(p);
+}
+
+export async function getProjectById(id: string): Promise<Project | null> {
+  const backend = await getBackend();
+  return backend.getProjectById(id);
+}
+
+export async function updateProject(
+  id: string,
+  patch: Partial<Omit<Project, "id" | "submittedAt">>,
+): Promise<Project | null> {
+  const backend = await getBackend();
+  return backend.updateProject(id, patch);
+}
+
+export async function deleteProject(id: string): Promise<boolean> {
+  const backend = await getBackend();
+  return backend.deleteProject(id);
 }
 
 /**

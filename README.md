@@ -16,18 +16,81 @@ Open `http://localhost:3000`.
 
 > **Without `.env.local` set, the site still loads** — but clicking "Sign in with Google" will fail. All read-only routes (home, lineup, tracks, showcase, about, organizer) work without any auth setup.
 
-## Routes
+## Architecture
+
+```
+                  ┌──────────────────────────────────────────┐
+                  │  Browser  (codingjam.dev)                │
+                  └────────────────────┬─────────────────────┘
+                                       │  HTTPS
+                                       ▼
+              ┌─────────────────────────────────────────────────┐
+              │  Cloud Run · codingjam-web                      │
+              │  ─────────────────────────────────────────────  │
+              │  Next.js 15 (App Router) · standalone container │
+              │                                                 │
+              │  Server pages              API routes           │
+              │  ─────────────             ─────────────        │
+              │  /                         /api/projects        │
+              │  /about /organizer         /api/projects/[id]   │
+              │  /tracks/[slug]            /api/upload          │
+              │  /showcase                 /api/admins          │
+              │  /submit  /me              /api/admins/[email]  │
+              │  /me/edit/[id]             /api/auth/*          │
+              │  /u/[id]                                        │
+              │  /admin                                         │
+              │                                                 │
+              │  Storage dispatcher (lib/projects.ts,           │
+              │  lib/admins.ts) — Firestore in prod,            │
+              │  local JSON files in dev                        │
+              └────┬──────────────┬─────────────────┬───────────┘
+                   │              │                 │
+       ADC + SA    │              │ ADC + SA        │ Google OAuth
+                   ▼              ▼                 ▼
+        ┌─────────────────┐ ┌────────────────┐ ┌──────────────────┐
+        │  Firestore      │ │  GCS bucket    │ │  Google Identity │
+        │  (Native)       │ │  *-uploads     │ │  (OAuth 2.0)     │
+        │  ─────────────  │ │  ────────────  │ │  ───────────     │
+        │  projects/      │ │  screenshots/  │ │  Auth.js v5      │
+        │  admins/        │ │  (public-read) │ │  Google provider │
+        └─────────────────┘ └────────────────┘ └──────────────────┘
+
+        Secrets (Secret Manager)            Identity stamping
+        ─────────────────────────           ──────────────────
+        auth-secret                         submittedByEmail, builderName
+        auth-google-id                      and builderImage are taken from
+        auth-google-secret                  the verified session — never
+        mounted as env vars at runtime      from the request body.
+```
+
+### Surface map
+
+The site has four user surfaces, all rendered by the same Next.js container:
+
+- **Public marketing** — `/`, `/about`, `/tracks/[slug]`, `/organizer`. Server-rendered, no auth, read-only from Firestore for the chapter board / featured builds.
+- **Community showcase** — `/showcase`. Filterable list of all submitted builds.
+- **Builder loop** — sign in (Auth.js) → `/submit` to add a build → `/me` for badges + own builds (edit / delete from here) → public sharable `/u/[id]` profile.
+- **Operator loop** — `/admin` for admins only (Firestore-backed allowlist; bootstrap via `scripts/seed-admin.mjs`).
+
+### Routes
 
 | Route | What it is |
 | --- | --- |
-| `/` | Landing — hero + **The Lineup** (8 independent tracks), chapter hero board, featured community builds |
+| `/` | Landing — hero + **The Lineup** (9 tracks), chapter hero board, featured community builds |
 | `/about` | What a Coding Jam is — concept, value props, 2-hour rhythm, the **Spec Talk** skill + 5 questions |
-| `/tracks/[slug]` | Per-track deep dive — what to build in 45 minutes, the aha moment, polished-version pulls, the 5-phase rhythm |
-| `/organizer` | How to run a Jam — kit, schedule, **per-track facilitator notes** (Spec Talk emphasis + polished tease) |
+| `/tracks/[slug]` | Per-track deep dive — what to build in 45 minutes, the aha moment, polished-version pulls |
+| `/organizer` | How to run a Jam — kit, schedule, **per-track facilitator notes** |
 | `/showcase` | Community builds, filterable by track + chapter |
 | `/submit` | Sign in with Google → in-site form to submit a build |
+| `/me` | Your builder profile — badges, current tier + progress to next, own builds with edit / delete |
+| `/me/edit/[id]` | Edit one of your own submissions (PATCH `/api/projects/[id]` under the hood) |
+| `/u/[id]` | Public builder profile — opaque hash of email as slug, no PII leak |
+| `/admin` | Admin dashboard — stats, chapters, tracks, builders, recent submissions, admin management |
 | `/api/projects` | `GET` lists projects · `POST` creates one (requires session) |
+| `/api/projects/[id]` | `PATCH` updates · `DELETE` removes (requires session + submitter ownership) |
 | `/api/upload` | `POST` uploads a screenshot to Cloud Storage (requires session) |
+| `/api/admins` | `GET` lists admins · `POST` adds one (requires admin) |
+| `/api/admins/[email]` | `DELETE` removes an admin (requires admin, can't remove self) |
 | `/api/auth/*` | Auth.js (NextAuth v5) handlers |
 
 ## Setting up Google sign-in
@@ -61,13 +124,18 @@ For production, repeat with your production origin (e.g. `https://codingjams.exa
 
 ## Data
 
-- `lib/tracks.ts` — single source of truth for the 8 tracks (project, tagline, 45-min build, the moment it clicks, Spec Talk emphasis, polished pull-ins, codelab URL). Submissions may also use `trackNumber=0` for **"I built my own"** (off-track / custom builds).
-- `lib/projects.ts` — storage **dispatcher** + types + helpers. `listProjects()` + `addProject()` are the only entry points the rest of the app uses. Also exports `normalizeChapter()` and `chapterMatchKey()` so chapter strings group case-insensitively ("GDG Boston" and "gdg boston" are one chapter on the hero board).
+- `lib/tracks.ts` — single source of truth for the 9 tracks (project, tagline, 45-min build, the moment it clicks, Spec Talk emphasis, polished pull-ins, codelab URL). Track 9 ("Your Own Idea") is the off-menu free-build track; `trackNumber=0` is the legacy form of the same intent kept for old submissions.
+- `lib/projects.ts` — storage **dispatcher** + types + helpers. `listProjects()`, `addProject()`, `listProjectsByEmail()`, `listProjectsByProfileId()`, `getProjectById()`, `updateProject()`, `deleteProject()`. Also exports `normalizeChapter()` and `chapterMatchKey()` so chapter strings group case-insensitively ("GDG Boston" and "gdg boston" are one chapter on the hero board).
 - `lib/projects-fs.ts` — local JSON-file backend (reads/writes `data/projects.json`).
 - `lib/projects-firestore.ts` — Firestore backend.
+- `lib/admins.ts` — admin allowlist dispatcher. `isAdmin()`, `listAdmins()`, `addAdmin()`, `removeAdmin()`. Doc id = lowercased email so the gate check is a single point lookup.
+- `lib/admins-fs.ts` / `lib/admins-firestore.ts` — same dispatcher pattern as projects, separate `admins/` collection.
+- `lib/badges.ts` — badge tier table (`BADGES`) and `badgesFor(count)` helper. Thresholds (1 / 5 / 10), artwork URLs, and claim links live here — edit this file to change them, no other code touches it.
+- `lib/profile.ts` — `emailToProfileId(email)` — opaque, irreversible 12-char hash. Used as the `/u/[id]` slug and stored on each project (`submitterProfileId`, `collaboratorProfileIds[]`) so public profiles never leak emails.
 - `lib/firestore.ts` — Firestore client singleton, only loaded when the Firestore backend is active.
 - `lib/uploads.ts` — Cloud Storage upload helper. Accepts `image/png|jpeg|webp|gif` up to 8 MB, returns a public `https://storage.googleapis.com/<bucket>/<object>` URL. Reads `GCS_UPLOADS_BUCKET` at request time.
-- `data/projects.json` — seed data + the live store when running in local mode.
+- `data/projects.json` — seed data + the live project store when running in local mode.
+- `data/admins.json` — the live admin store when running in local mode.
 
 ### Storage backend selection
 
@@ -118,6 +186,22 @@ The submit form uploads a hero image directly to a public-read GCS bucket via `/
 3. Your account needs `roles/storage.objectAdmin` on the bucket (the runtime SA already has it).
 
 Without these, the rest of the form still works — only the upload returns a clear `Upload bucket is not configured` error.
+
+## Admin dashboard
+
+`/admin` is a server-rendered ops page (stats, chapter / track / country tables, builder + recent submission lists, admin management). Access is gated by an explicit Firestore-backed allowlist — anyone not on the list gets a `notFound()` so the URL is non-discoverable.
+
+**Bootstrap the very first admin** (one-shot, idempotent):
+
+```bash
+# Local — adds to data/admins.json
+node scripts/seed-admin.mjs you@example.com
+
+# Production Firestore
+STORAGE_BACKEND=firestore node scripts/seed-admin.mjs you@example.com
+```
+
+After that, every admin add / remove happens through `/admin` itself — no more script runs. Admins can't remove themselves (lockout protection); ask another admin to do it.
 
 ## Deploying to Cloud Run
 

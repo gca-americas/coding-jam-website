@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { addProject, chapterMatchKey, listProjects, listProjectsRaw, normalizeChapter } from "@/lib/projects";
+import { emailToProfileId } from "@/lib/profile";
 import { auth } from "@/auth";
 
 // Run on Node.js (we use the filesystem for storage).
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
   if (body.trackNumber === undefined || body.trackNumber === null || body.trackNumber === "") {
     return NextResponse.json({ error: "Missing field: trackNumber" }, { status: 400 });
   }
-  const requiredStrings = ["projectName", "chapter", "country", "repoUrl", "surprise"];
+  const requiredStrings = ["projectName", "chapter", "country", "surprise"];
   for (const k of requiredStrings) {
     if (!body[k] || (typeof body[k] === "string" && !(body[k] as string).trim())) {
       return NextResponse.json({ error: `Missing field: ${k}` }, { status: 400 });
@@ -42,14 +43,10 @@ export async function POST(req: Request) {
   }
 
   const trackNumber = Number(body.trackNumber);
-  // 0 = "I built my own" (off-track / custom build); 1–8 are the official tracks.
-  if (!Number.isInteger(trackNumber) || trackNumber < 0 || trackNumber > 8) {
-    return NextResponse.json({ error: "trackNumber must be 0–8" }, { status: 400 });
-  }
-
-  const repoUrl = String(body.repoUrl);
-  if (!/^https?:\/\//i.test(repoUrl)) {
-    return NextResponse.json({ error: "repoUrl must start with http(s)://" }, { status: 400 });
+  // 0 = legacy "I built my own" option; 1–8 are the official tracks; 9 is the
+  // "build your own idea" off-menu track.
+  if (!Number.isInteger(trackNumber) || trackNumber < 0 || trackNumber > 9) {
+    return NextResponse.json({ error: "trackNumber must be 0–9" }, { status: 400 });
   }
 
   const safeUrl = (v: unknown): string | undefined => {
@@ -70,16 +67,42 @@ export async function POST(req: Request) {
   const match = existing.find((p) => chapterMatchKey(p.chapter, p.country) === incomingKey);
   const chapter = match ? match.chapter : submittedChapter;
 
+  // Optional collaborator emails — accept either an array or a
+  // comma/whitespace-separated string. Lowercase, dedupe, drop anything that
+  // doesn't look like an address. Capped at 10 to limit abuse.
+  const collaboratorEmails = (() => {
+    const raw = body.collaboratorEmails;
+    if (!raw) return undefined;
+    const candidates = Array.isArray(raw)
+      ? raw.map((e) => String(e))
+      : String(raw).split(/[,\s]+/);
+    const cleaned = candidates
+      .map((e) => e.trim().toLowerCase())
+      .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
+      .map((e) => e.slice(0, 254));
+    const unique = Array.from(new Set(cleaned));
+    return unique.length ? unique.slice(0, 10) : undefined;
+  })();
+
+  const submitterEmail = user.email.toLowerCase();
+  const submitterProfileId = emailToProfileId(submitterEmail);
+  const collaboratorProfileIds = collaboratorEmails?.map((e) => emailToProfileId(e));
+
   const project = await addProject({
     trackNumber,
     projectName: String(body.projectName).slice(0, 120).trim(),
     // Stamped from the verified Google identity, never from the request body.
     builderName: user.name.slice(0, 80).trim(),
     builderImage: user.image ?? undefined,
-    submittedByEmail: user.email,
+    // Lowercased so /me's listProjectsByEmail matches exactly in Firestore.
+    submittedByEmail: submitterEmail,
+    collaboratorEmails,
+    // Opaque, irreversible — safe to expose publicly on PublicProject.
+    submitterProfileId,
+    collaboratorProfileIds,
     chapter,
     country,
-    repoUrl,
+    repoUrl: safeUrl(body.repoUrl),
     demoUrl: safeUrl(body.demoUrl),
     videoUrl: safeUrl(body.videoUrl),
     screenshotUrl: safeUrl(body.screenshotUrl),
@@ -88,7 +111,8 @@ export async function POST(req: Request) {
   });
 
   // Strip private fields from the response, even though we just wrote them.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { submittedByEmail: _email, ...publicProject } = project;
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  const { submittedByEmail: _email, collaboratorEmails: _collabs, ...publicProject } = project;
+  /* eslint-enable @typescript-eslint/no-unused-vars */
   return NextResponse.json({ project: publicProject }, { status: 201 });
 }

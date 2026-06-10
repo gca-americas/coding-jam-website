@@ -40,7 +40,12 @@ export default async function Home() {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {TRACKS.map((t) => (
-              <TrackCard key={t.slug} track={t} />
+              <div
+                key={t.slug}
+                className={t.number === 9 ? "sm:col-span-2 lg:col-span-4" : undefined}
+              >
+                <TrackCard track={t} wide={t.number === 9} />
+              </div>
             ))}
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-between gap-3 text-sm text-ash">

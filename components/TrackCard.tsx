@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { Track, colorClasses, trackLabel } from "@/lib/tracks";
 
-export default function TrackCard({ track }: { track: Track }) {
+export default function TrackCard({ track, wide = false }: { track: Track; wide?: boolean }) {
   const c = colorClasses[track.color];
+  if (wide) return <WideTrackCard track={track} />;
   return (
     <Link
       href={`/tracks/${track.slug}`}
-      className="group relative flex flex-col rounded-3xl bg-white border border-line overflow-hidden hover:shadow-lift transition-all hover:-translate-y-0.5"
+      className="group relative flex flex-col h-full rounded-3xl bg-white border border-line overflow-hidden hover:shadow-lift transition-all hover:-translate-y-0.5"
     >
       {/* Header — neutral by default; YouTube poster fades in on hover (preview-on-hover). */}
       <div className="relative p-5 flex items-start justify-between bg-white overflow-hidden min-h-[88px]">
@@ -66,6 +67,39 @@ export default function TrackCard({ track }: { track: Track }) {
 
       {/* Bottom accent bar — the track's color identity */}
       <div className={`h-1 ${c.bg}`} />
+    </Link>
+  );
+}
+
+/**
+ * Horizontal, full-row tile — used for the "build your own idea" track so it
+ * sits visually distinct from the 8 menu tracks above.
+ */
+function WideTrackCard({ track }: { track: Track }) {
+  const c = colorClasses[track.color];
+  return (
+    <Link
+      href={`/tracks/${track.slug}`}
+      className="group relative flex items-center gap-5 rounded-3xl bg-white border border-line overflow-hidden hover:shadow-lift transition-all hover:-translate-y-0.5 px-5 py-4"
+    >
+      <div className={`shrink-0 h-12 w-12 rounded-2xl ${c.bgSoft} flex items-center justify-center text-2xl`}>
+        {track.emoji}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className={`text-[11px] font-mono font-semibold tracking-widest uppercase ${c.text}`}>
+          Track {trackLabel(track.number)}
+        </div>
+        <div className="font-display font-bold text-lg sm:text-xl text-ink leading-tight mt-0.5 truncate">
+          {track.project}
+        </div>
+      </div>
+      <p className="hidden md:block text-sm text-ash leading-relaxed max-w-md truncate">
+        {track.tagline}
+      </p>
+      <span className={`shrink-0 text-sm font-medium ${c.text} group-hover:translate-x-0.5 transition-transform`}>
+        Open →
+      </span>
+      <div className={`absolute inset-y-0 left-0 w-1 ${c.bg}`} />
     </Link>
   );
 }

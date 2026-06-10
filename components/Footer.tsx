@@ -33,9 +33,8 @@ export default function Footer() {
         </div>
       </div>
       <div className="border-t border-line">
-        <div className="container-page py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-ash">
+        <div className="container-page py-4 text-xs text-ash">
           <span>A community initiative for GDG chapters in the Americas.</span>
-          <span>Built with Gemini · ADK · A2A · A2UI · MCP</span>
         </div>
       </div>
     </footer>

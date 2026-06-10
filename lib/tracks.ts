@@ -328,6 +328,37 @@ export const TRACKS: Track[] = [
     screenshotUrl: "",
     youtubeId: "xFtSxF0ZM0g",
   },
+  {
+    number: 9,
+    slug: "build-your-own-idea",
+    project: "Your Own Idea",
+    tagline: "No menu. No template. The thing you've been daydreaming about.",
+    color: "blue",
+    emoji: "💡",
+    dropIn: true,
+    mmv:
+      "Bring an idea you've been sitting on — write a 1-paragraph PRD, hand it to Antigravity, and ship a working slice in 45 minutes. No starter repo. No menu. Just your spec and your taste.",
+    aha: "I built the thing that was only in my head.",
+    thinkAbout: [
+      "One paragraph of PRD beats a backlog. If you can't describe it in three sentences, you can't ship it in 45 minutes.",
+      "Pick the smallest version of the idea that's still recognizable — one core flow, one screen, no settings.",
+      "Your signature detail matters more here than anywhere else. There's no demo to copy from, so the soul has to come from you.",
+      "Stuck on prompting? Steal from the other tracks — image gen, RAG, persona design, agent loops are all fair game.",
+    ],
+    tech: ["Whatever your idea needs"],
+    polished: [
+      "Whatever the at-home version of your idea looks like.",
+      "Steal patterns from tracks 1-8 — they're reference implementations now.",
+      "Polish pass: empty states, error states, the one delightful detail.",
+    ],
+    specTalkEmphasis:
+      "This is the no-safety-net version of track 8. There's no demo to compare against, so the Spec Talk is the only thing keeping the scope honest. Question 1 (what *is* this) and question 4 (what's the signature detail) carry the room here. Facilitators should circulate and ask 'what's the smallest version that's still YOURS?' — the answer is usually three features lighter than the participant's first instinct.",
+    ifStuck: [],
+    starterRepo: "",
+    codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
+    videoUrl: "",
+    screenshotUrl: "",
+  },
 ];
 
 export const colorClasses: Record<

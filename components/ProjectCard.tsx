@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PublicProject } from "@/lib/projects";
 import { TRACKS, colorClasses, trackLabel } from "@/lib/tracks";
 
@@ -7,6 +8,7 @@ export default function ProjectCard({ project }: { project: PublicProject }) {
   const c = track ? colorClasses[track.color] : colorClasses.blue;
   const trackChipLabel = isCustom ? "Built their own" : `Track ${trackLabel(project.trackNumber)}`;
   const fallbackEmoji = isCustom ? "🛠️" : track?.emoji ?? "✨";
+  const profileHref = project.submitterProfileId ? `/u/${project.submitterProfileId}` : null;
 
   return (
     <article className="card card-hover overflow-hidden flex flex-col">
@@ -52,7 +54,13 @@ export default function ProjectCard({ project }: { project: PublicProject }) {
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <div className="font-medium text-ink truncate">{project.builderName}</div>
+            {profileHref ? (
+              <Link href={profileHref} className="font-medium text-ink truncate hover:text-gblue hover:underline block">
+                {project.builderName}
+              </Link>
+            ) : (
+              <div className="font-medium text-ink truncate">{project.builderName}</div>
+            )}
           </div>
         </div>
         {project.description && (

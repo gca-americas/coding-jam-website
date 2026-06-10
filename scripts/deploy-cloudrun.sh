@@ -182,33 +182,29 @@ echo
 # ---------------------------------------------------------------------------
 # 6. Done — print URL and next steps
 # ---------------------------------------------------------------------------
-# Cloud Run exposes the service under two equivalent hostnames (project-number
-# form and random-hash form). We pin to the project-number form so the OAuth
-# redirect URI is stable across re-deploys.
+# Cloud Run exposes the service under two equivalent *.run.app hostnames;
+# we resolve the project-number form for display only.
 PROJECT_NUMBER="$(gcloud projects describe "${PROJECT_ID}" \
   --format='value(projectNumber)')"
-URL="https://${SERVICE}-${PROJECT_NUMBER}.${REGION}.run.app"
+RUN_URL="https://${SERVICE}-${PROJECT_NUMBER}.${REGION}.run.app"
 
-# Auth.js needs an explicit AUTH_URL on Cloud Run — HOSTNAME=0.0.0.0 in the
-# container otherwise poisons the inferred base URL, and trustHost alone
-# isn't reliable behind Cloud Run's proxy.
-bold "==> Setting AUTH_URL=${URL}…"
-gcloud run services update "${SERVICE}" \
-  --region "${REGION}" --project "${PROJECT_ID}" \
-  --update-env-vars "AUTH_URL=${URL}" \
-  --quiet >/dev/null
+# Canonical app URL — the one users see and that's registered in the OAuth
+# client. Defaults to the custom domain; override via env var if needed.
+CANONICAL_URL="${AUTH_URL:-https://codingjam.dev}"
 
 bold "==> Deployed:"
-echo "    ${URL}"
+echo "    ${CANONICAL_URL}"
+echo "    (also reachable at ${RUN_URL})"
 echo
 
 # ---------------------------------------------------------------------------
-# 6b. Ensure AUTH_URL matches the discovered public URL.
-# Without this, Auth.js v5 inside the Cloud Run container falls back to
-# HOSTNAME+PORT (0.0.0.0:8080) when building redirect / error URLs, breaking
-# the post-signin flow. trustHost=true alone is insufficient on Cloud Run
-# because Next.js standalone sets HOSTNAME=0.0.0.0 and Auth.js uses that
-# as the origin guess even with AUTH_TRUST_HOST=true.
+# 6b. Ensure AUTH_URL is set on the service.
+# Auth.js v5 inside Cloud Run can't infer the public URL — the standalone
+# Next.js container sets HOSTNAME=0.0.0.0, which poisons the inferred origin
+# even with trustHost=true. So AUTH_URL must be explicit.
+#
+# We respect an already-set AUTH_URL (so the canonical URL can be changed
+# out-of-band without re-running this script wiping it).
 # ---------------------------------------------------------------------------
 CURRENT_ENV="$(gcloud run services describe "${SERVICE}" \
   --region "${REGION}" --project "${PROJECT_ID}" \
@@ -217,13 +213,12 @@ CURRENT_ENV="$(gcloud run services describe "${SERVICE}" \
 if [[ "${CURRENT_ENV}" == *"AUTH_URL"* ]]; then
   EXISTING_AUTH_URL="$(echo "${CURRENT_ENV}" | tr ';' '\n' | grep "'name': 'AUTH_URL'" | grep -oE "'value': '[^']*'" | sed -E "s/'value': '(.*)'/\1/")"
   dim "==> AUTH_URL already set to: ${EXISTING_AUTH_URL}"
-  dim "    (Cloud Run also exposes this service at: ${URL})"
   dim "    To change canonical: gcloud run services update ${SERVICE} --update-env-vars 'AUTH_URL=<your-url>' --region ${REGION} --project ${PROJECT_ID}"
 else
-  bold "==> Setting AUTH_URL=${URL} on the service (initial deploy)…"
+  bold "==> Setting AUTH_URL=${CANONICAL_URL} on the service (initial deploy)…"
   gcloud run services update "${SERVICE}" \
     --region "${REGION}" --project "${PROJECT_ID}" \
-    --update-env-vars "AUTH_URL=${URL}" --quiet >/dev/null
+    --update-env-vars "AUTH_URL=${CANONICAL_URL}" --quiet >/dev/null
   dim "    new revision created with AUTH_URL set"
 fi
 echo
@@ -235,8 +230,9 @@ if [[ -n "${MOUNT_SECRETS}" ]]; then
 fi
 
 bold "==> Final step — register the OAuth callback:"
-echo "    Add this redirect URI to the Google OAuth client used by AUTH_GOOGLE_ID:"
-echo "      ${URL}/api/auth/callback/google"
+echo "    These redirect URIs must be in the Google OAuth client used by AUTH_GOOGLE_ID:"
+echo "      ${CANONICAL_URL}/api/auth/callback/google"
+echo "      ${RUN_URL}/api/auth/callback/google"
 echo
 echo "    Credentials console:"
 echo "      https://console.cloud.google.com/apis/credentials?project=${PROJECT_ID}"

@@ -52,16 +52,64 @@ const COUNTRIES: string[] = [
   "Venezuela",
 ];
 
-export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[]; builder: Builder }) {
+export type SubmitFormInitial = {
+  trackNumber?: number;
+  projectName?: string;
+  chapter?: string;
+  country?: string;
+  repoUrl?: string;
+  demoUrl?: string;
+  videoUrl?: string;
+  screenshotUrl?: string;
+  description?: string;
+  surprise?: string;
+  collaboratorEmails?: string[];
+};
+
+export default function SubmitForm({
+  tracks,
+  builder,
+  initial,
+  editId,
+}: {
+  tracks: TrackOption[];
+  builder: Builder;
+  initial?: SubmitFormInitial;
+  editId?: string;
+}) {
   const router = useRouter();
+  const isEdit = Boolean(editId);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const [screenshotUrl, setScreenshotUrl] = useState<string>("");
+  const [screenshotUrl, setScreenshotUrl] = useState<string>(initial?.screenshotUrl ?? "");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // One row per collaborator. Seed from `initial` when editing; otherwise one
+  // empty row so the field is visible. Stable ids let React keep focus on the
+  // right input after rows are added/removed.
+  const initialCollabs = initial?.collaboratorEmails?.length
+    ? initial.collaboratorEmails.map((email, i) => ({ id: i, email }))
+    : [{ id: 0, email: "" }];
+  const collaboratorIdRef = useRef(initialCollabs.length);
+  const [collaborators, setCollaborators] = useState<{ id: number; email: string }[]>(initialCollabs);
+
+  function updateCollaborator(id: number, email: string) {
+    setCollaborators((rows) => rows.map((r) => (r.id === id ? { ...r, email } : r)));
+  }
+  function addCollaborator() {
+    setCollaborators((rows) => [...rows, { id: collaboratorIdRef.current++, email: "" }]);
+  }
+  function removeCollaborator(id: number) {
+    setCollaborators((rows) => {
+      const next = rows.filter((r) => r.id !== id);
+      // Always keep at least one (empty) row so the field is visible.
+      return next.length ? next : [{ id: collaboratorIdRef.current++, email: "" }];
+    });
+  }
 
   async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -112,11 +160,14 @@ export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[];
       screenshotUrl,
       description: String(form.get("description") || "").trim(),
       surprise: String(form.get("surprise") || "").trim(),
+      collaboratorEmails: collaborators.map((r) => r.email.trim()).filter(Boolean),
     };
 
     try {
-      const res = await fetch("/api/projects", {
-        method: "POST",
+      const url = isEdit ? `/api/projects/${editId}` : "/api/projects";
+      const method = isEdit ? "PATCH" : "POST";
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -125,7 +176,8 @@ export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[];
         throw new Error(j.error || "Submission failed");
       }
       setSuccess(true);
-      setTimeout(() => router.push("/showcase"), 800);
+      setTimeout(() => router.push("/me"), 800);
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setSubmitting(false);
@@ -136,8 +188,10 @@ export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[];
     return (
       <div className="card p-10 text-center">
         <div className="text-5xl">🎉</div>
-        <h3 className="font-display font-bold text-2xl text-ink mt-4">You&rsquo;re on the board.</h3>
-        <p className="text-ash mt-2">Redirecting to the showcase…</p>
+        <h3 className="font-display font-bold text-2xl text-ink mt-4">
+          {isEdit ? "Saved." : "You’re on the board."}
+        </h3>
+        <p className="text-ash mt-2">Redirecting to your profile…</p>
       </div>
     );
   }
@@ -173,18 +227,17 @@ export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[];
       {/* The build */}
       <Section title="The build" eyebrow="Step 1">
         <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Which track?" hint="Pick the track this project comes from — or choose 'I built my own' for an off-track build.">
-            <select name="trackNumber" required className="input" defaultValue="1">
+          <Field label="Which track?" hint="Pick the track this project comes from. Off-menu builds land on Track 09 — Your Own Idea.">
+            <select name="trackNumber" required className="input" defaultValue={String(initial?.trackNumber ?? 1)}>
               {tracks.map((t) => (
                 <option key={t.number} value={t.number}>
                   Track {t.number.toString().padStart(2, "0")} — {t.project}
                 </option>
               ))}
-              <option value="0">✨ I built my own</option>
             </select>
           </Field>
           <Field label="Project name" hint="What you called it. Make it sing.">
-            <input name="projectName" required placeholder="Berliner Stimmung" className="input" />
+            <input name="projectName" required placeholder="Berliner Stimmung" className="input" defaultValue={initial?.projectName ?? ""} />
           </Field>
         </div>
       </Section>
@@ -193,10 +246,10 @@ export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[];
       <Section title="Your GDG chapter" eyebrow="Step 2">
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="GDG city chapter" hint="e.g. GDG NYC, GDG Toronto, GDG Seattle">
-            <input name="chapter" required placeholder="GDG Seattle" className="input" />
+            <input name="chapter" required placeholder="GDG Seattle" className="input" defaultValue={initial?.chapter ?? ""} />
           </Field>
           <Field label="Country" hint="North & South America only.">
-            <select name="country" required defaultValue="United States" className="input">
+            <select name="country" required defaultValue={initial?.country ?? "United States"} className="input">
               {COUNTRIES.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -205,16 +258,51 @@ export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[];
             </select>
           </Field>
         </div>
+        <Field
+          label="Collaborator emails (optional)"
+          hint="Pair-programmed with one or more people? Add their emails — they&rsquo;ll get credit toward their builder badges next time they sign in. Up to 10."
+        >
+          <div className="space-y-2">
+            {collaborators.map((row, idx) => (
+              <div key={row.id} className="flex items-center gap-2">
+                <input
+                  type="email"
+                  value={row.email}
+                  onChange={(e) => updateCollaborator(row.id, e.target.value)}
+                  placeholder={idx === 0 ? "alex@example.com" : "another@example.com"}
+                  className="input flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeCollaborator(row.id)}
+                  aria-label="Remove collaborator"
+                  className="shrink-0 h-10 w-10 rounded-lg text-ash hover:text-gred hover:bg-gred/10 transition-colors flex items-center justify-center text-lg leading-none"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            {collaborators.length < 10 && (
+              <button
+                type="button"
+                onClick={addCollaborator}
+                className="text-sm text-gblue hover:underline font-medium"
+              >
+                + Add another collaborator
+              </button>
+            )}
+          </div>
+        </Field>
       </Section>
 
       {/* The links */}
       <Section title="The links" eyebrow="Step 3">
         <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Repo URL" hint="GitHub, GitLab, Codeberg — anywhere public.">
-            <input type="url" name="repoUrl" required placeholder="https://github.com/you/your-build" className="input" />
+          <Field label="Repo URL (optional)" hint="GitHub, GitLab, Codeberg — anywhere public.">
+            <input type="url" name="repoUrl" placeholder="https://github.com/you/your-build" className="input" defaultValue={initial?.repoUrl ?? ""} />
           </Field>
-          <Field label="Video / walkthrough URL" hint="YouTube, Loom, anything embeddable.">
-            <input type="url" name="videoUrl" placeholder="https://youtu.be/..." className="input" />
+          <Field label="Video / walkthrough URL (optional)" hint="YouTube, Loom, anything embeddable.">
+            <input type="url" name="videoUrl" placeholder="https://youtu.be/..." className="input" defaultValue={initial?.videoUrl ?? ""} />
           </Field>
         </div>
 
@@ -259,7 +347,7 @@ export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[];
         </Field>
 
         <Field label="Live demo URL (optional)" hint="Cloud Run / Vercel / wherever it's running.">
-          <input type="url" name="demoUrl" placeholder="https://your-build.run.app" className="input" />
+          <input type="url" name="demoUrl" placeholder="https://your-build.run.app" className="input" defaultValue={initial?.demoUrl ?? ""} />
         </Field>
       </Section>
 
@@ -275,6 +363,7 @@ export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[];
             maxLength={500}
             placeholder="Mood Jar lets you type how you're feeling and drops a tiny kawaii token into a glass jar. The jar fills up over the week — a quiet, visual mood log without the journaling pressure."
             className="input resize-none"
+            defaultValue={initial?.description ?? ""}
           />
         </Field>
       </Section>
@@ -292,6 +381,7 @@ export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[];
             maxLength={400}
             placeholder="I assumed I'd have to coach Gemini into being empathetic. Turns out it already was — and the instruction I deleted was the one telling it to be kind."
             className="input resize-none"
+            defaultValue={initial?.surprise ?? ""}
           />
         </Field>
       </Section>
@@ -307,7 +397,7 @@ export default function SubmitForm({ tracks, builder }: { tracks: TrackOption[];
           By submitting, you confirm the links you&rsquo;re sharing are public and don&rsquo;t contain secrets.
         </p>
         <button disabled={submitting || uploading} className="btn-google disabled:opacity-60">
-          {submitting ? "Submitting…" : "Ship it →"}
+          {submitting ? (isEdit ? "Saving…" : "Submitting…") : isEdit ? "Save changes" : "Ship it →"}
         </button>
       </div>
     </form>
