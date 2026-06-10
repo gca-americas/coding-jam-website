@@ -2,7 +2,7 @@
 
 A turnkey landing site for the GDG Coding Jams — eight independent 2-hour AI build sessions ("tracks") driven by an Antigravity codelab, an organizer playbook, and a community project showcase with a chapter hero board.
 
-> **The Build phase IS the codelab.** Participants run the [Antigravity codelab](https://github.com/cuppibla/coding-jam-codelab/blob/main/coding-jam/codelab.md) — Antigravity writes the code, they direct it via three spec docs (PRD / UI / Engineering). Six sub-phases inside ~75 min: Setup → Plan → Review → Build → API → Verify. "Fix the doc, not the code."
+> **The Build phase IS the codelab.** Participants run the [Antigravity codelab](https://github.com/gca-americas/coding-jam-codelab/blob/main/coding-jam/codelab.md) — Antigravity writes the code, they direct it via three spec docs (PRD / UI / Engineering). Six sub-phases inside ~75 min: Setup → Plan → Review → Build → API → Verify. "Fix the doc, not the code."
 
 ## Run it
 

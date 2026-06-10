@@ -5,6 +5,7 @@ import { TRACKS, getTrack, colorClasses, trackLabel, CODING_JAM_STACK } from "@/
 import { listProjects } from "@/lib/projects";
 import ProjectCard from "@/components/ProjectCard";
 import Timeline from "@/components/Timeline";
+import CopyableCode from "@/components/CopyableCode";
 
 export function generateStaticParams() {
   return TRACKS.map((t) => ({ slug: t.slug }));
@@ -278,12 +279,12 @@ export default async function TrackPage({ params }: { params: Promise<{ slug: st
           <div className="card p-6">
             <div className="section-eyebrow">Run it yourself</div>
             <p className="text-xs text-ash mt-2">After the jam, on your own machine.</p>
-            <pre className="mt-3 text-[11px] font-mono bg-cloud/60 border border-line rounded-lg p-3 overflow-x-auto leading-relaxed text-ink">
-{`git clone https://github.com/cuppibla/coding-jam
+            <CopyableCode
+              code={`git clone https://github.com/gca-americas/coding-jam
 cd coding-jam/${track.starterRepo.split("/").pop() ?? track.slug}
 # follow the codelab for Antigravity
 # setup + .env`}
-            </pre>
+            />
           </div>
 
           <div className="card p-6">
