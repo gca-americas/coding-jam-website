@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
+import { isBlocked, recordAttempt } from "@/lib/blocklist";
 
 /**
  * Auth.js v5 setup. Google is the only provider — sharing a build requires a
@@ -23,5 +24,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
   pages: {
     signIn: "/submit",
+  },
+  callbacks: {
+    /**
+     * Blocked emails never get a session. Returning a path (rather than false)
+     * routes them to /banned instead of the generic Auth.js error page. The
+     * attempt is recorded on their moderation record so organizers see repeats.
+     */
+    async signIn({ user }) {
+      if (await isBlocked(user?.email)) {
+        console.warn(`[auth] blocked sign-in attempt: ${user?.email}`);
+        await recordAttempt(user?.email);
+        return "/banned";
+      }
+      return true;
+    },
   },
 });

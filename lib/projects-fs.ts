@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
-import type { Project } from "./projects";
+import type { Project, ProjectPatch } from "./projects";
 
 const DATA_FILE = path.join(process.cwd(), "data", "projects.json");
 
@@ -58,23 +58,21 @@ export async function getProjectById(id: string): Promise<Project | null> {
   return all.find((p) => p.id === id) ?? null;
 }
 
-export async function updateProject(
-  id: string,
-  patch: Partial<Omit<Project, "id" | "submittedAt">>,
-): Promise<Project | null> {
+export async function updateProject(id: string, patch: ProjectPatch): Promise<Project | null> {
   const all = await readAll();
   const idx = all.findIndex((p) => p.id === id);
   if (idx === -1) return null;
-  // Strip undefined fields from the patch so we don't accidentally blow away
-  // existing values when the caller passes `{ foo: undefined }`.
-  const clean: Record<string, unknown> = {};
+  // `undefined` leaves a field alone so `{ foo: undefined }` can't blow away an
+  // existing value; `null` removes it — that's how jam attribution is cleared.
+  const updated = { ...all[idx] } as Record<string, unknown>;
   for (const [k, v] of Object.entries(patch)) {
-    if (v !== undefined) clean[k] = v;
+    if (v === undefined) continue;
+    if (v === null) delete updated[k];
+    else updated[k] = v;
   }
-  const updated: Project = { ...all[idx], ...clean } as Project;
-  all[idx] = updated;
+  all[idx] = updated as Project;
   await writeAll(all);
-  return updated;
+  return all[idx];
 }
 
 export async function deleteProject(id: string): Promise<boolean> {

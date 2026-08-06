@@ -100,7 +100,7 @@ export default function AnimationsPreview() {
                 style={{ animationDelay: "0ms" }}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-ggreen animate-pulse" />
-                <span>8 independent jams for GDG communities · What&rsquo;s a Coding Jam? →</span>
+                <span>Community-run jams for GDG chapters · What&rsquo;s a Coding Jam? →</span>
               </Link>
 
               <h1 className="font-display font-bold tracking-tight text-5xl sm:text-7xl mt-6 leading-[1.02] text-ink">
@@ -161,9 +161,9 @@ export default function AnimationsPreview() {
 
               <div className="mt-10 flex flex-wrap gap-2">
                 {[
-                  { label: "8 weekly jams", dot: "bg-gblue" },
+                  { label: "8 ready-made jams", dot: "bg-gblue" },
                   { label: "2hr per session", dot: "bg-gred" },
-                  { label: "Antigravity-driven", dot: "bg-gyellow" },
+                  { label: "AI Studio or Antigravity", dot: "bg-gyellow" },
                   { label: "∞ drop-ins welcome", dot: "bg-ggreen" },
                 ].map((s, i) => (
                   <span
@@ -223,7 +223,7 @@ export default function AnimationsPreview() {
           <div className="section-eyebrow">What&rsquo;s animating</div>
           <ul className="mt-3 space-y-2 text-sm text-ink leading-relaxed">
             <li>
-              <span className="font-semibold">0–150ms</span> · the &ldquo;8 independent jams&rdquo; pill fades up.
+              <span className="font-semibold">0–150ms</span> · the &ldquo;Community-run jams&rdquo; pill fades up.
             </li>
             <li>
               <span className="font-semibold">150–500ms</span> · &ldquo;Build with AI.&rdquo; slides up.

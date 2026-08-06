@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { TRACKS, colorClasses, trackLabel } from "@/lib/tracks";
 
+/**
+ * Track 09 is the "bring your own idea" option rather than a ready-made topic,
+ * so it's neither a tile nor part of the count — that keeps the grid a clean
+ * 4×2 and the chip honest about how many topics are actually written for you.
+ */
+const READY_MADE = TRACKS.filter((t) => t.number !== 9);
+
 export default function Hero() {
   return (
     <section className="relative overflow-hidden">
@@ -13,7 +20,7 @@ export default function Hero() {
               className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-line text-xs text-ash shadow-soft hover:shadow-lift hover:text-ink transition-all"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-ggreen animate-pulse" />
-              <span>8 independent jams for GDG communities · What&rsquo;s a Coding Jam? →</span>
+              <span>Community-run jams for GDG chapters · What&rsquo;s a Coding Jam? →</span>
             </Link>
             <h1 className="font-display font-bold tracking-tight text-5xl sm:text-7xl mt-6 leading-[1.02] text-ink">
               Build with AI.<br />
@@ -21,11 +28,11 @@ export default function Hero() {
               In two hours.
             </h1>
             <p className="mt-6 text-lg text-ash max-w-2xl">
-              Pick any track. Open the kit. Ship a real AI prototype before the pizza gets cold.
+              Pick a jam. Open the kit. Ship a real AI prototype before the pizza gets cold.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="#lineup" className="btn-google">
-                Jump to the lineup ↓
+              <Link href="#jams" className="btn-google">
+                Jump to the jams ↓
               </Link>
               <Link href="/showcase" className="btn-tonal">
                 See community builds
@@ -35,17 +42,17 @@ export default function Hero() {
               </Link>
             </div>
             <div className="mt-10 flex flex-wrap gap-2">
-              <Stat label="8 weekly jams" dotColor="bg-gblue" />
+              <Stat label="Create your own jam" dotColor="bg-gblue" />
               <Stat label="2hr per session" dotColor="bg-gred" />
-              <Stat label="Antigravity-driven" dotColor="bg-gyellow" />
+              <Stat label="AI Studio or Antigravity" dotColor="bg-gyellow" />
               <Stat label="∞ drop-ins welcome" dotColor="bg-ggreen" />
             </div>
           </div>
 
-          {/* 4×2 track tile grid — fast-access navigator, doubles as visual balance for the headline. */}
+          {/* 4×2 tile grid — fast-access navigator, doubles as visual balance for the headline. */}
           <div className="lg:col-span-5">
             <div className="grid grid-cols-4 gap-3">
-              {TRACKS.map((t) => {
+              {READY_MADE.map((t) => {
                 const c = colorClasses[t.color];
                 return (
                   <Link
@@ -66,7 +73,7 @@ export default function Hero() {
               })}
             </div>
             <p className="mt-3 text-xs text-ash text-center">
-              Click a tile to dive in · or scroll for the demos
+              Click a tile to dive in · or scroll for community builds
             </p>
           </div>
         </div>

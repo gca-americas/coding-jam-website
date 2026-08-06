@@ -21,8 +21,6 @@ export type Track = {
 
   /** Bullets describing what the polished at-home version pulls in. */
   polished: string[];
-  /** The one paragraph guiding the facilitator on what Spec Talk question to emphasize this week. */
-  specTalkEmphasis: string;
   /** context/<file>.md references the starter ships with — safety nets, not requirements. */
   ifStuck: string[];
 
@@ -71,8 +69,6 @@ export const TRACKS: Track[] = [
       "'Rate my friends' group photo",
       "Decade time machine",
     ],
-    specTalkEmphasis:
-      "This is the participants' first Spec Talk. The facilitator walks the room through it live — showing how 2 minutes of talking shapes the next 45 minutes of building. Question 4 (the signature detail) gets extra attention this week, because everyone's making a 'try-on' app — the signature is what makes theirs different from the person sitting next to them. Maybe one app writes a sassy stylist note. Another adds a 'vibe rating.' Same scaffolding, different soul. In Antigravity, the signature detail lives in the PRD — name it explicitly and the UI doc picks it up automatically.",
     ifStuck: ["context/image-gen-tryon.md"],
     starterRepo: "https://github.com/gca-americas/codingjam-glow-up",
     codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
@@ -104,8 +100,6 @@ export const TRACKS: Track[] = [
       "Social media format presets (Twitter PFP, Discord, LinkedIn)",
       "User-defined style prompts",
     ],
-    specTalkEmphasis:
-      "Participants run more of the Spec Talk solo. The facilitator steps in for tricky questions. Question 2 (input/output) is where the real design work happens — does the app accept any photo, or only faces? Does it generate one avatar or 4 at once? Does it work on full-body photos or just close-ups? Get this tight in the Spec Talk and the UI doc Antigravity generates comes back almost finished.",
     ifStuck: ["context/image-gen-stylization.md"],
     starterRepo: "https://github.com/gca-americas/codingjam-avatar-studio",
     codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
@@ -122,15 +116,15 @@ export const TRACKS: Track[] = [
     emoji: "📅",
     dropIn: true,
     mmv:
-      "During the Spec Talk, the participant tells AI the meaningful dates in their life — birthdays, anniversaries, the day they got their dog. AI generates a beautifully designed, scrollable year calendar with a short AI-written warm note for each date ('Grandma's birthday — call her' / 'One year since you and Sam').",
+      "The participant tells AI the meaningful dates in their life — birthdays, anniversaries, the day they got their dog. AI generates a beautifully designed, scrollable year calendar with a short AI-written warm note for each date ('Grandma's birthday — call her' / 'One year since you and Sam').",
     aha: "My whole year, laid out like a poem.",
     thinkAbout: [
       "Decide who's looking at this — a quiet you-only calendar looks completely different from one printed for the family fridge. The audience drives every visual choice.",
-      "Hardcode your dates from the Spec Talk into the build. Don't construct a date editor today; that's the polished version.",
+      "Hardcode your dates into the build. Don't construct a date editor today; that's the polished version.",
       "Keep the AI's tone consistent across notes. 'Grandma's birthday — call her' should match the energy of every other line.",
       "Static display. No login, no database, no Google Calendar sync. The constraint is what makes it ship.",
     ],
-    tech: ["LLM for warm notes", "Generative layout from Spec-Talk data"],
+    tech: ["LLM for warm notes", "Generative layout from your own dates"],
     polished: [
       "Login + edit-your-own-dates flow",
       "Google Calendar sync",
@@ -140,9 +134,7 @@ export const TRACKS: Track[] = [
       "Photo-per-date upload",
       "Audio bed (ambient soundscape)",
     ],
-    specTalkEmphasis:
-      "Question 1 (the magical moment) is the star this week. Who's looking at this calendar? Just them, alone, on a quiet evening? Their family, printed and on the fridge? A version they can share online? The answer drives every visual decision. This is the week where participants discover that the magical moment isn't always 'wow factor' — sometimes it's 'feels like home.' Name that feeling in the PRD's opening paragraph; the UI doc inherits the whole mood from one sentence.",
-    ifStuck: ["context/calendar-layout.md", "context/personal-data-from-spectalk.md"],
+    ifStuck: ["context/calendar-layout.md", "context/personal-data.md"],
     starterRepo: "https://github.com/gca-americas/codingjam-year-in-poetry",
     codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
     videoUrl: "https://youtu.be/WviNDBWFeek",
@@ -176,8 +168,6 @@ export const TRACKS: Track[] = [
       "Photo input — show your fridge instead of typing",
       "Save & share recipe gallery",
     ],
-    specTalkEmphasis:
-      "Halfway point. Participants now run the entire Spec Talk solo. The facilitator observes and helps individuals who get stuck rather than facilitating the whole room. Watch for Question 5 (not-building) — the temptation to add pantry / dietary / budget filters here is enormous. If a participant adds them to the PRD, they will appear in the build. The PRD is the gate.",
     ifStuck: ["context/image-gen-food.md"],
     starterRepo: "https://github.com/gca-americas/codingjam-fridge-chef",
     codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
@@ -212,8 +202,6 @@ export const TRACKS: Track[] = [
       "Share-your-jar mode",
       "Voice memo input",
     ],
-    specTalkEmphasis:
-      "Question 3 (Personality) becomes the heart of this week's Spec Talk — the AI's tone is the whole product. The facilitator highlights this so participants notice they're using the Spec Talk to make a real design decision, not just describe a feature. The personality goes verbatim into the PRD's voice section. Antigravity's engineering doc inherits it as the system prompt.",
     ifStuck: ["context/persona-prompt-pattern.md"],
     starterRepo: "https://github.com/gca-americas/codingjam-moodjar",
     codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
@@ -233,7 +221,7 @@ export const TRACKS: Track[] = [
       "Single page. Name, 2-line bio, 3 things you're proud of, one photo. Deploy to a real URL via Vercel/Netlify drag-and-drop. That's it.",
     aha: "I have a website I can text my mom.",
     thinkAbout: [
-      "The hardest input is you. Use the Spec Talk to get unstuck — out loud, with the room. It's much easier to describe yourself when someone else is asking.",
+      "The hardest input is you. Say it out loud to the room to get unstuck — it's much easier to describe yourself when someone else is asking.",
       "Pick the photo before the bio. The photo sets the tone for everything else on the page.",
       "A live URL today beats a perfect site next week. Drag-and-drop deploy first; iterate on copy after.",
       "Resist adding a blog, a contact form, a guestbook. All polished version — every one is its own afternoon.",
@@ -248,8 +236,6 @@ export const TRACKS: Track[] = [
       "Links-tree mode",
       "AI-generated 'sounds like you' refinements",
     ],
-    specTalkEmphasis:
-      "This is the hardest Spec Talk because the topic is them. Most people freeze when asked 'what's your magical moment?' about themselves. The facilitator names this out loud and lets the room sit with it. The skill being practiced is using the Spec Talk for self-reflection — a transferable life skill. The PRD they write today is the first time many of them will have written a one-page spec about themselves.",
     ifStuck: ["context/deploy-to-vercel.md", "context/self-writing-prompts.md"],
     starterRepo: "https://github.com/gca-americas/codingjam-my-corner",
     codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
@@ -284,8 +270,6 @@ export const TRACKS: Track[] = [
       "Application tracker",
       "ATS scoring",
     ],
-    specTalkEmphasis:
-      "Question 5 (What you're NOT building today) is the star this week — there are SO many tempting features (cover letter! PDF! interview prep!). The facilitator uses this week to drive home that 'not building' is what makes 45 minutes possible. The not-building list goes into the PRD as an explicit non-goals section. Antigravity respects it; without it, scope creep makes the build doc twice as long.",
     ifStuck: ["context/long-context-handling.md", "context/text-diff-pattern.md"],
     starterRepo: "https://github.com/gca-americas/codingjam-bulletproof",
     codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
@@ -308,7 +292,7 @@ export const TRACKS: Track[] = [
       "One paragraph of personality + one thing they'd never say. That's the whole spec. Adding more makes the character generic, not deeper.",
       "The 'never say' rule is the secret weapon — constraints create authenticity. Without it, every character sounds the same.",
       "Five messages is a feature, not a limit. It forces you to test the persona itself, not the chat scrollback.",
-      "Run YOUR Spec Talk on YOUR character. No menu, no demo to copy — this is the open canvas. The Spec Talk works on anything you bring to it.",
+      "Bring your own character. No menu, no template to copy — this one is the open canvas.",
     ],
     tech: ["Persona design + chat guardrails"],
     polished: [
@@ -319,8 +303,6 @@ export const TRACKS: Track[] = [
       "In-character safety guardrails",
       "Themed visual packs (anime, sci-fi, noir)",
     ],
-    specTalkEmphasis:
-      "Open canvas. Participants run the Spec Talk on their own original idea — no menu, no demo to copy. This is the graduation moment. The Spec Talk works on anything. Now they prove it — write a PRD from scratch, run it through Antigravity, ship the build.",
     ifStuck: ["context/character-system-prompts.md", "context/character-guardrails.md"],
     starterRepo: "https://github.com/gca-americas/codingjam-character-chat",
     codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
@@ -351,8 +333,6 @@ export const TRACKS: Track[] = [
       "Steal patterns from tracks 1-8 — they're reference implementations now.",
       "Polish pass: empty states, error states, the one delightful detail.",
     ],
-    specTalkEmphasis:
-      "This is the no-safety-net version of track 8. There's no demo to compare against, so the Spec Talk is the only thing keeping the scope honest. Question 1 (what *is* this) and question 4 (what's the signature detail) carry the room here. Facilitators should circulate and ask 'what's the smallest version that's still YOURS?' — the answer is usually three features lighter than the participant's first instinct.",
     ifStuck: [],
     starterRepo: "",
     codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
@@ -416,31 +396,3 @@ export function trackLabel(n: number): string {
   return n.toString().padStart(2, "0");
 }
 
-/** The 5 Spec Talk questions — referenced on the about page and in per-track facilitator notes. */
-export const SPEC_TALK_QUESTIONS: Array<{ n: number; name: string; ask: string }> = [
-  {
-    n: 1,
-    name: "Magical moment",
-    ask: "Who's looking at this and what feeling are we going for?",
-  },
-  {
-    n: 2,
-    name: "Input / output",
-    ask: "What does the app take in, exactly? What does it give back?",
-  },
-  {
-    n: 3,
-    name: "Personality",
-    ask: "What's the AI's tone? Witty? Quiet? Stern? Encouraging?",
-  },
-  {
-    n: 4,
-    name: "Signature detail",
-    ask: "What's the one thing that makes ours different from the person next to us?",
-  },
-  {
-    n: 5,
-    name: "Not building today",
-    ask: "What are we explicitly NOT shipping? Name it out loud.",
-  },
-];

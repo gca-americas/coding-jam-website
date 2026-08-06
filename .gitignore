@@ -26,6 +26,10 @@ service-account*.json
 # Admin allowlist for local dev — bootstrapped via `node scripts/seed-admin.mjs`.
 # Contains emails; each developer seeds their own, never share via git.
 data/admins.json
+# Organizer roster for local dev — same deal, contains emails.
+data/organizers.json
+# Jams created locally — organizer-authored content, not shared state.
+data/jams.json
 
 # --- Logs --------------------------------------------------------------------
 *.log
@@ -47,3 +51,6 @@ coverage/
 
 # --- Claude Code -------------------------------------------------------------
 .claude/
+
+# Moderation backups — contain private submitter emails, never commit.
+/backups/

@@ -1,14 +1,25 @@
 import Link from "next/link";
-import { PublicProject } from "@/lib/projects";
+import type { PublicProject } from "@/lib/projects";
+import { organizerCredit } from "@/lib/attribution";
+import { googleTechLabel } from "@/lib/google-tech";
 import { TRACKS, colorClasses, trackLabel } from "@/lib/tracks";
 
 export default function ProjectCard({ project }: { project: PublicProject }) {
   const isCustom = project.trackNumber === 0;
   const track = TRACKS.find((t) => t.number === project.trackNumber);
   const c = track ? colorClasses[track.color] : colorClasses.blue;
-  const trackChipLabel = isCustom ? "Built their own" : `Track ${trackLabel(project.trackNumber)}`;
+  // A build from a jam with a non-track topic has no track number to show, so
+  // the chip falls back to the topic the organizer set for that week.
+  const trackChipLabel = isCustom
+    ? project.topicLabel ?? "Built their own"
+    : `Track ${trackLabel(project.trackNumber)}`;
   const fallbackEmoji = isCustom ? "🛠️" : track?.emoji ?? "✨";
   const profileHref = project.submitterProfileId ? `/u/${project.submitterProfileId}` : null;
+  // Ids are stored; a tag retired from the catalog since submission resolves to
+  // null and is simply not shown.
+  const techLabels = (project.googleTech ?? [])
+    .map(googleTechLabel)
+    .filter((l): l is string => Boolean(l));
 
   return (
     <article className="card card-hover overflow-hidden flex flex-col">
@@ -61,6 +72,15 @@ export default function ProjectCard({ project }: { project: PublicProject }) {
             ) : (
               <div className="font-medium text-ink truncate">{project.builderName}</div>
             )}
+            {project.jamSlug && (
+              <Link
+                href={`/jam/${project.jamSlug}`}
+                className="text-[11px] text-ash hover:text-gblue truncate block"
+                title={`${project.jamTitle ?? project.jamSlug} — led by ${organizerCredit(project)}`}
+              >
+                {project.jamTitle ?? project.jamSlug} · {organizerCredit(project)}
+              </Link>
+            )}
           </div>
         </div>
         {project.description && (
@@ -72,6 +92,18 @@ export default function ProjectCard({ project }: { project: PublicProject }) {
           <p className="mt-3 text-sm text-ink italic leading-relaxed border-l-2 border-line pl-3">
             &ldquo;{project.surprise}&rdquo;
           </p>
+        )}
+        {techLabels.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {techLabels.map((label) => (
+              <span
+                key={label}
+                className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-cloud border border-line text-ash"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
         )}
         <div className="mt-auto pt-4 space-y-3">
           {project.demoUrl && (

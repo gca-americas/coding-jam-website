@@ -8,7 +8,13 @@ import {
   updateProject,
 } from "@/lib/projects";
 import { emailToProfileId } from "@/lib/profile";
+import { canonicalChapterName, isChapterType, resolveChapter } from "@/lib/chapters";
+import { canonicalCountry } from "@/lib/countries";
+import { getJam } from "@/lib/jams";
+import { parseGoogleTech } from "@/lib/google-tech";
+import { topicView } from "@/lib/topic";
 import { auth } from "@/auth";
+import { isAdmin } from "@/lib/admins";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,7 +42,12 @@ function normalizeCollaboratorEmails(raw: unknown): string[] | undefined {
   return unique.slice(0, 10);
 }
 
-async function loadOwnedProject(req: Request, id: string) {
+/**
+ * `allowAdmin` widens the check for moderation. Admins can delete any build
+ * from /admin, but editing stays owner-only — removing spam is moderation,
+ * rewriting someone's project description is putting words in their mouth.
+ */
+async function loadOwnedProject(req: Request, id: string, allowAdmin = false) {
   const session = await auth();
   const user = session?.user;
   if (!user?.email) {
@@ -46,8 +57,8 @@ async function loadOwnedProject(req: Request, id: string) {
   if (!project) {
     return { error: NextResponse.json({ error: "Project not found." }, { status: 404 }) };
   }
-  // Only the original submitter can edit/delete. Collaborators don't have rights.
-  if (project.submittedByEmail?.toLowerCase() !== user.email.toLowerCase()) {
+  const isOwner = project.submittedByEmail?.toLowerCase() === user.email.toLowerCase();
+  if (!isOwner && !(allowAdmin && (await isAdmin(user.email)))) {
     return { error: NextResponse.json({ error: "Not your build." }, { status: 403 }) };
   }
   return { user, project };
@@ -78,6 +89,35 @@ export async function PATCH(
     patch.trackNumber = n;
   }
 
+  /*
+   * Jam attribution. As on POST, everything stored is read off the jam record
+   * server-side — the client sends only a slug. "" clears the attribution back
+   * to NA. When a jam is set it also decides the track, so an edit can't leave
+   * the two disagreeing.
+   */
+  if (body.jamSlug !== undefined) {
+    const slug = String(body.jamSlug || "").trim();
+    if (!slug) {
+      patch.jamSlug = null;
+      patch.jamTitle = null;
+      patch.organizerName = null;
+      patch.organizerEmail = null;
+      patch.topicLabel = null;
+    } else {
+      const jam = await getJam(slug);
+      if (!jam || jam.status !== "published") {
+        return NextResponse.json({ error: "That jam isn't accepting submissions." }, { status: 400 });
+      }
+      const view = topicView(jam.topic);
+      patch.jamSlug = jam.slug;
+      patch.jamTitle = jam.title;
+      patch.organizerName = jam.organizerName;
+      patch.organizerEmail = jam.organizerEmail;
+      patch.topicLabel = view.title;
+      patch.trackNumber = view.track ? view.track.number : 0;
+    }
+  }
+
   if (typeof body.projectName === "string") {
     const v = body.projectName.slice(0, 120).trim();
     if (!v) return NextResponse.json({ error: "projectName cannot be empty" }, { status: 400 });
@@ -94,21 +134,55 @@ export async function PATCH(
     patch.description = body.description.slice(0, 500).trim() || undefined;
   }
 
-  if (body.repoUrl !== undefined) patch.repoUrl = safeUrl(body.repoUrl);
+  // Untagging a build entirely is a legitimate edit, so an empty selection sends
+  // null (clear) — undefined would be read as "field absent, leave alone".
+  if (body.googleTech !== undefined) {
+    const picked = parseGoogleTech(body.googleTech);
+    patch.googleTech = picked.length ? picked : null;
+  }
+
+  if (body.repoUrl !== undefined) {
+    const v = safeUrl(body.repoUrl);
+    if (!v) return NextResponse.json({ error: "repoUrl cannot be empty" }, { status: 400 });
+    patch.repoUrl = v;
+  }
   if (body.demoUrl !== undefined) patch.demoUrl = safeUrl(body.demoUrl);
   if (body.videoUrl !== undefined) patch.videoUrl = safeUrl(body.videoUrl);
-  if (body.screenshotUrl !== undefined) patch.screenshotUrl = safeUrl(body.screenshotUrl);
+  if (body.screenshotUrl !== undefined) {
+    const v = safeUrl(body.screenshotUrl);
+    if (!v) return NextResponse.json({ error: "screenshotUrl cannot be empty" }, { status: 400 });
+    patch.screenshotUrl = v;
+  }
 
   if (typeof body.chapter === "string" && typeof body.country === "string") {
-    const country = body.country.slice(0, 80).trim();
-    const submittedChapter = normalizeChapter(body.chapter.slice(0, 80));
-    if (!country || !submittedChapter) {
-      return NextResponse.json({ error: "chapter and country cannot be empty" }, { status: 400 });
+    const country = canonicalCountry(body.country);
+    if (!country) {
+      return NextResponse.json({ error: "Unknown country." }, { status: 400 });
+    }
+    const chapterType = body.chapterType;
+    if (!isChapterType(chapterType)) {
+      return NextResponse.json(
+        { error: "chapterType must be 'gdg', 'campus', or 'other'." },
+        { status: 400 },
+      );
+    }
+    const rawChapterName = body.chapter.slice(0, 120);
+    const resolved = resolveChapter(chapterType, rawChapterName);
+    if (!resolved) {
+      return NextResponse.json(
+        { error: `"${rawChapterName.trim()}" isn't in the ${chapterType === "campus" ? "GDG on Campus" : "GDG"} directory.` },
+        { status: 400 },
+      );
     }
     const existing = await listProjectsRaw();
-    const incomingKey = chapterMatchKey(submittedChapter, country);
+    const incomingKey = chapterMatchKey(resolved, country);
     const match = existing.find((p) => p.id !== id && chapterMatchKey(p.chapter, p.country) === incomingKey);
-    patch.chapter = match ? match.chapter : submittedChapter;
+    patch.chapter = match ? match.chapter : normalizeChapter(resolved);
+    patch.chapterType = chapterType;
+    patch.chapterName =
+      chapterType === "other"
+        ? rawChapterName.replace(/\s+/g, " ").trim().slice(0, 80)
+        : canonicalChapterName(chapterType, rawChapterName)!;
     patch.country = country;
   }
 

@@ -19,6 +19,8 @@ dist
 .idea
 .DS_Store
 *.log
+# Moderation backups — contain private submitter emails. Never ship in an image.
+backups
 
 # --- Repo hygiene that doesn't belong in the image --------------------------
 README.md
@@ -26,7 +28,15 @@ README.md
 LICENSE
 
 # --- Seed source — used by `npm run seed` from a workstation, never at runtime
-data
+# Excluded file-by-file, not as `data/`: lib/countries.ts and lib/chapters.ts
+# statically import data/countries.json and the two chapter directories, so
+# `next build` needs them in the context. These five are local-backend state,
+# which production reads from Firestore instead.
+data/projects.json
+data/admins.json
+data/blocklist.json
+data/organizers.json
+data/jams.json
 scripts
 
 # --- Docker / Cloud config we don't need inside the image -------------------

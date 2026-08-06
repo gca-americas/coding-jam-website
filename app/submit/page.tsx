@@ -1,13 +1,48 @@
 import Link from "next/link";
 import SubmitForm from "./SubmitForm";
 import SignInGate from "./SignInGate";
-import { TRACKS } from "@/lib/tracks";
+import { getJam, jamsOpenForSubmission, listPublishedJams } from "@/lib/jams";
+import { topicView } from "@/lib/topic";
 import { auth } from "@/auth";
 
-export default async function SubmitPage() {
+export const dynamic = "force-dynamic";
+
+export default async function SubmitPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ jam?: string }>;
+}) {
   const session = await auth();
   const user = session?.user;
   const signedIn = Boolean(user?.email);
+
+  // Arriving from a jam page locks the topic to that jam. An unknown or
+  // unpublished slug is ignored rather than erroring — the plain submit form
+  // is always a valid fallback.
+  const { jam: jamSlug } = await searchParams;
+  const jam = jamSlug ? await getJam(jamSlug) : null;
+
+  // Free-standing submissions pick their jam from the last two weeks.
+  const jamChoices = jamsOpenForSubmission(await listPublishedJams()).map((j) => ({
+    slug: j.slug,
+    title: j.title,
+    chapter: j.chapter,
+    eventDate: j.eventDate,
+  }));
+  const jamContext =
+    jam && jam.status === "published"
+      ? {
+          slug: jam.slug,
+          title: jam.title,
+          organizerName: jam.organizerName,
+          chapter: jam.chapter,
+          country: jam.country,
+          chapterType: jam.chapterType,
+          chapterName: jam.chapterName,
+          topicTitle: topicView(jam.topic).title,
+          topicEmoji: topicView(jam.topic).emoji,
+        }
+      : null;
 
   return (
     <>
@@ -31,7 +66,8 @@ export default async function SubmitPage() {
         <div className="lg:col-span-2">
           {signedIn && user?.name ? (
             <SubmitForm
-              tracks={TRACKS.map((t) => ({ number: t.number, project: t.project }))}
+              jamChoices={jamChoices}
+              jam={jamContext}
               builder={{
                 name: user.name,
                 email: user.email ?? "",

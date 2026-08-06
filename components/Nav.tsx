@@ -1,9 +1,11 @@
 import Link from "next/link";
 import Logo from "./Logo";
 import { auth, signIn, signOut } from "@/auth";
+import { canManageJams } from "@/lib/organizers";
 
 const links = [
-  { href: "/", label: "The Lineup" },
+  { href: "/", label: "Home" },
+  { href: "/jams", label: "Jams" },
   { href: "/about", label: "About" },
   { href: "/showcase", label: "Showcase" },
   { href: "/organizer", label: "For Organizers" },
@@ -12,6 +14,9 @@ const links = [
 export default async function Nav() {
   const session = await auth();
   const user = session?.user;
+  // Only organizers and admins see the console link — everyone else would just
+  // hit the access-needed page.
+  const showJams = await canManageJams(user?.email);
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur bg-white/80 border-b border-line">
@@ -36,6 +41,14 @@ export default async function Nav() {
 
           {user ? (
             <div className="flex items-center gap-2 ml-2 pl-2 border-l border-line">
+              {showJams && (
+                <Link
+                  href="/organizer/jams"
+                  className="px-3 py-2 text-sm text-ash hover:text-ink rounded-full hover:bg-cloud transition-colors"
+                >
+                  My jams
+                </Link>
+              )}
               <Link href="/submit" className="btn-google !py-2 !px-4">
                 Share your build
               </Link>

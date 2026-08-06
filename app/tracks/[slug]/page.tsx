@@ -69,8 +69,8 @@ export default async function TrackPage({ params }: { params: Promise<{ slug: st
       <section className={`relative overflow-hidden ${c.bg} text-white`}>
         <div className="absolute inset-0 dotted-bg opacity-20" />
         <div className="container-page relative py-16 sm:py-24">
-          <Link href="/#lineup" className="inline-flex items-center gap-1.5 text-white/80 text-sm hover:text-white">
-            ← Back to the lineup
+          <Link href="/#jams" className="inline-flex items-center gap-1.5 text-white/80 text-sm hover:text-white">
+            ← Back to the jams
           </Link>
           <div className="mt-6 flex items-start justify-between flex-wrap gap-4">
             <div className="max-w-2xl">
@@ -331,7 +331,7 @@ cd coding-jam/${track.starterRepo.split("/").pop() ?? track.slug}
             <div className="section-eyebrow">Pick another track</div>
             <h3 className="h-display text-2xl mt-1">All independent — start anywhere.</h3>
           </div>
-          <Link href="/#lineup" className="text-sm text-gblue hover:underline">See full lineup →</Link>
+          <Link href="/#jams" className="text-sm text-gblue hover:underline">See all jams →</Link>
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
           {suggestions.map((s) => {

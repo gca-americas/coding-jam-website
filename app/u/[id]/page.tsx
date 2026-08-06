@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ProjectCard from "@/components/ProjectCard";
 import BadgeCard from "@/components/BadgeCard";
@@ -5,6 +6,46 @@ import { badgesFor, type EarnedBadge } from "@/lib/badges";
 import { listProjectsByProfileId, toPublic } from "@/lib/projects";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Per-profile OG tags. This is the page builders share to X and LinkedIn after
+ * submitting, and LinkedIn renders whatever the page itself declares — without
+ * this it would fall back to the generic site card for everyone.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  if (!/^[a-f0-9]{12}$/i.test(id)) return {};
+  const projects = await listProjectsByProfileId(id);
+  if (projects.length === 0) return {};
+
+  const own = projects.find((p) => p.submitterProfileId === id);
+  const name = own?.builderName ?? "A builder";
+  const newest = projects[0];
+  const count = projects.length;
+
+  const title = `${name} — GDG Coding Jams`;
+  const description =
+    count === 1
+      ? `${name} shipped ${newest.projectName} at a Coding Jam with ${newest.chapter}.`
+      : `${name} has shipped ${count} builds at Coding Jams with ${newest.chapter}.`;
+  const image = newest.screenshotUrl || "/og-default.png";
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "profile",
+      images: [{ url: image, alt: `${newest.projectName} by ${name}` }],
+    },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
+  };
+}
 
 const BAR_BG: Record<EarnedBadge["color"], string> = {
   gblue: "bg-gblue",

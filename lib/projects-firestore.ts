@@ -1,6 +1,6 @@
-import { Filter } from "@google-cloud/firestore";
+import { FieldValue, Filter } from "@google-cloud/firestore";
 import { db, PROJECTS_COLLECTION } from "./firestore";
-import type { Project } from "./projects";
+import type { Project, ProjectPatch } from "./projects";
 
 export async function listProjectsRaw(): Promise<Project[]> {
   const snap = await db
@@ -76,17 +76,16 @@ export async function getProjectById(id: string): Promise<Project | null> {
   return { id: snap.id, ...data };
 }
 
-export async function updateProject(
-  id: string,
-  patch: Partial<Omit<Project, "id" | "submittedAt">>,
-): Promise<Project | null> {
+export async function updateProject(id: string, patch: ProjectPatch): Promise<Project | null> {
   const ref = db.collection(PROJECTS_COLLECTION).doc(id);
   const snap = await ref.get();
   if (!snap.exists) return null;
-  // Strip undefined — Firestore rejects undefined values.
+  // Firestore rejects undefined, so those are dropped (leave the field alone).
+  // `null` means remove the field — that's how jam attribution is cleared.
   const clean: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(patch)) {
-    if (v !== undefined) clean[k] = v;
+    if (v === undefined) continue;
+    clean[k] = v === null ? FieldValue.delete() : v;
   }
   await ref.update(clean);
   const after = await ref.get();

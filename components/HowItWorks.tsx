@@ -28,22 +28,22 @@ const steps: Step[] = [
   {
     emoji: "🎬",
     time: "10 min",
-    title: "Watch the demo",
-    body: "The polished version of tonight's app, shipped live by the facilitator. This is what's possible.",
+    title: "Pick a topic",
+    body: "Your chapter has one for the week, or you bring your own idea. Two minutes of deciding what you're making.",
     color: "red",
   },
   {
     emoji: "🚀",
     time: "75 min",
-    title: "Build",
-    body: "Antigravity writes the code. You direct it with a one-page PRD. Fix the doc, not the code.",
+    title: "Build together",
+    body: "AI does the typing; you direct it. Everyone's building at once, so the person next to you is the fastest way past a wall.",
     color: "yellow",
   },
   {
     emoji: "🎤",
     time: "Walk out",
-    title: "Show it off",
-    body: "A working app on your laptop. A new collaborator. Bragging rights.",
+    title: "Share what you made",
+    body: "Two minutes each, screen-shared from your seat. Then it goes on the showcase — half-finished is welcome.",
     color: "green",
   },
 ];

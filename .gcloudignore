@@ -20,6 +20,9 @@ dist
 .idea
 .DS_Store
 *.log
+.claude
+# Moderation backups — contain private submitter emails. Never upload.
+backups
 
 # --- Docs (already in git, no need in build context) ------------------------
 README.md
@@ -27,7 +30,17 @@ README.md
 LICENSE
 
 # --- Seed data + scripts (workstation-only, never run inside the image) -----
-data
+# NOTE: excluded file-by-file, not as `data/`. .gcloudignore uses gitignore
+# semantics, where a `!` exception cannot re-include a file whose parent
+# directory is excluded. data/countries.json and the two chapter directories
+# MUST reach the builder — lib/countries.ts and lib/chapters.ts import them
+# statically, so `next build` fails without them. These five are the
+# local-backend state files, which production reads from Firestore instead.
+data/projects.json
+data/admins.json
+data/blocklist.json
+data/organizers.json
+data/jams.json
 scripts
 
 # --- Tests / coverage -------------------------------------------------------

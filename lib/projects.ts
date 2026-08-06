@@ -27,7 +27,12 @@ export type Project = {
   submitterProfileId?: string;
   /** Public — opaque hashes of collaborator emails. Used to credit collaborators on /u/[id]. */
   collaboratorProfileIds?: string[];
+  /** Display label, e.g. "GDG Chicago" or "GDG on Campus Stanford University". */
   chapter: string;
+  /** Which directory the chapter came from. Absent on pre-directory submissions. */
+  chapterType?: "gdg" | "campus" | "other";
+  /** The bare directory entry, e.g. "Chicago". Absent on pre-directory submissions. */
+  chapterName?: string;
   country: string;
   repoUrl?: string;
   demoUrl?: string;
@@ -37,16 +42,54 @@ export type Project = {
   surprise: string;
   /** ISO 8601 string. Sorts lexicographically the same way real dates do. */
   submittedAt: string;
+  /** Ids from lib/google-tech.ts. Absent on submissions from before the field existed. */
+  googleTech?: string[];
+
+  /* ── Jam attribution. All absent on a free-standing submission, which is
+        why every surface renders "NA" rather than assuming a jam. Denormalized
+        at submit time so counts and credits survive the jam being edited or
+        deleted later. ── */
+  /** Slug of the jam this was submitted through. */
+  jamSlug?: string;
+  /** The jam's name at submit time. */
+  jamTitle?: string;
+  /** Public — the organizer who ran that jam. */
+  organizerName?: string;
+  /** Private — the organizer's email, for per-organizer aggregation. */
+  organizerEmail?: string;
+  /** The jam's topic label at submit time, for topics that aren't built-in tracks. */
+  topicLabel?: string;
 };
 
 /** Public-safe view of a project — strips fields that should never reach the client. */
-export type PublicProject = Omit<Project, "submittedByEmail" | "collaboratorEmails">;
+export type PublicProject = Omit<
+  Project,
+  "submittedByEmail" | "collaboratorEmails" | "organizerEmail"
+>;
+
+export type CountryStat = {
+  country: string;
+  /** Projects shipped from this country. */
+  count: number;
+  /** Distinct chapters in this country that have shipped at least one project. */
+  chapters: number;
+};
 
 export type ChapterStat = {
   chapter: string;
   country: string;
   count: number;
 };
+
+/** Jam attribution can be removed entirely, so these accept null to mean "clear". */
+type ClearableFields = "jamSlug" | "jamTitle" | "organizerName" | "organizerEmail" | "topicLabel";
+
+export type ProjectPatch = Partial<
+  Omit<Project, "id" | "submittedAt" | ClearableFields | "googleTech">
+> &
+  Partial<Record<ClearableFields, string | null>> &
+  /** Same clearing convention, but it's a list — untagging a build sends null. */
+  Partial<{ googleTech: string[] | null }>;
 
 export type StorageBackend = "firestore" | "local";
 
@@ -56,7 +99,7 @@ type BackendModule = {
   listProjectsByEmail: (email: string) => Promise<Project[]>;
   listProjectsByProfileId: (id: string) => Promise<Project[]>;
   getProjectById: (id: string) => Promise<Project | null>;
-  updateProject: (id: string, patch: Partial<Omit<Project, "id" | "submittedAt">>) => Promise<Project | null>;
+  updateProject: (id: string, patch: ProjectPatch) => Promise<Project | null>;
   deleteProject: (id: string) => Promise<boolean>;
 };
 
@@ -88,10 +131,77 @@ function getBackend(): Promise<BackendModule> {
 
 export function toPublic(p: Project): PublicProject {
   /* eslint-disable @typescript-eslint/no-unused-vars */
-  const { submittedByEmail, collaboratorEmails, ...rest } = p;
+  const { submittedByEmail, collaboratorEmails, organizerEmail, ...rest } = p;
   /* eslint-enable @typescript-eslint/no-unused-vars */
   return rest;
 }
+
+/** How far back the homepage's featured sample reaches. */
+export const FEATURED_POOL_SIZE = 100;
+
+/**
+ * A random handful drawn from the most recent submissions.
+ *
+ * The homepage used to show the newest six, which meant the same builds sat
+ * there until someone else submitted — a chapter that shipped this morning
+ * crowded out everyone from last week. Sampling a recent window keeps the
+ * section different on every load while still favouring fresh work.
+ *
+ * Callers must be dynamically rendered, or the sample freezes at build time.
+ */
+export function sampleRecent<T>(
+  items: ReadonlyArray<T>,
+  count: number,
+  poolSize: number = FEATURED_POOL_SIZE,
+): T[] {
+  const pool = items.slice(0, poolSize);
+  const n = Math.min(count, pool.length);
+  // Partial Fisher-Yates — shuffle only the prefix we're going to keep.
+  const order = [...pool.keys()];
+  for (let i = 0; i < n; i++) {
+    const j = i + Math.floor(Math.random() * (order.length - i));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return order.slice(0, n).map((i) => pool[i]);
+}
+
+/**
+ * The jams that actually have builds, for the showcase filter. Derived from the
+ * projects rather than the jam list so a jam that was deleted still appears
+ * while its builds do — the label comes from what was stamped at submit time.
+ */
+export function jamOptions(
+  projects: ReadonlyArray<PublicProject | Project>,
+): Array<{ slug: string; title: string; count: number }> {
+  const map = new Map<string, { slug: string; title: string; count: number }>();
+  for (const p of projects) {
+    if (!p.jamSlug) continue;
+    const row = map.get(p.jamSlug);
+    if (row) row.count += 1;
+    else map.set(p.jamSlug, { slug: p.jamSlug, title: p.jamTitle ?? p.jamSlug, count: 1 });
+  }
+  return [...map.values()].sort((a, b) => b.count - a.count || a.title.localeCompare(b.title, "en"));
+}
+
+/**
+ * Submissions per jam slug. Both the organizer console and the admin dashboard
+ * read from this — one pass over the project list rather than a query per jam.
+ */
+export function jamSubmissionCounts(
+  projects: ReadonlyArray<PublicProject | Project>,
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const p of projects) {
+    if (!p.jamSlug) continue;
+    counts.set(p.jamSlug, (counts.get(p.jamSlug) ?? 0) + 1);
+  }
+  return counts;
+}
+
+// Re-exported from lib/attribution.ts so server code has one import site. They
+// live there because ProjectCard renders inside a client boundary and must not
+// pull this module's Firestore import into the browser bundle.
+export { NO_ORGANIZER, organizerCredit } from "./attribution";
 
 /**
  * All projects where the given email matches either the submitter or a credited
@@ -168,10 +278,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
   return backend.getProjectById(id);
 }
 
-export async function updateProject(
-  id: string,
-  patch: Partial<Omit<Project, "id" | "submittedAt">>,
-): Promise<Project | null> {
+export async function updateProject(id: string, patch: ProjectPatch): Promise<Project | null> {
   const backend = await getBackend();
   return backend.updateProject(id, patch);
 }
@@ -214,4 +321,25 @@ export function chapterStats(projects: ReadonlyArray<PublicProject | Project>): 
     }
   }
   return [...map.values()].sort((a, b) => b.count - a.count);
+}
+
+/**
+ * Projects grouped by country, most projects first. Ties break alphabetically
+ * so the ordering is stable across renders rather than depending on insertion
+ * order (which changes as new projects arrive).
+ */
+export function countryStats(projects: ReadonlyArray<PublicProject | Project>): CountryStat[] {
+  const counts = new Map<string, number>();
+  const chapters = new Map<string, Set<string>>();
+  for (const p of projects) {
+    const country = p.country.trim();
+    if (!country) continue;
+    counts.set(country, (counts.get(country) ?? 0) + 1);
+    const set = chapters.get(country) ?? new Set<string>();
+    set.add(chapterMatchKey(p.chapter, country));
+    chapters.set(country, set);
+  }
+  return [...counts.entries()]
+    .map(([country, count]) => ({ country, count, chapters: chapters.get(country)?.size ?? 0 }))
+    .sort((a, b) => b.count - a.count || a.country.localeCompare(b.country, "en"));
 }

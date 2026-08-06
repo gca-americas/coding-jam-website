@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Timeline from "@/components/Timeline";
 import HowItWorks from "@/components/HowItWorks";
-import { SPEC_TALK_QUESTIONS, TRACKS } from "@/lib/tracks";
+import { TRACKS } from "@/lib/tracks";
 
 export default function AboutPage() {
   return (
@@ -26,7 +26,7 @@ export default function AboutPage() {
             real prototype walking out the door.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/#lineup" className="btn-google">Browse the lineup</Link>
+            <Link href="/#jams" className="btn-google">Browse the jams</Link>
             <Link href="/organizer" className="btn-ghost">I&rsquo;m an organizer</Link>
           </div>
         </div>
@@ -71,35 +71,13 @@ export default function AboutPage() {
       </section>
 
       {/* The Jam Session Kit */}
-      <section className="bg-cloud border-y border-line">
-        <div className="container-page py-20">
-          <div className="grid sm:grid-cols-3 gap-10 items-start">
-            <div className="sm:col-span-1">
-              <div className="section-eyebrow">The Jam Session Kit</div>
-              <h2 className="h-display text-3xl mt-2">Turnkey, by design.</h2>
-              <p className="text-ash mt-4">
-                A complete kit with starter code, frictionless API access, and an 8-track app curriculum. Every
-                track ships with the same three ingredients.
-              </p>
-              <Link href="/organizer#kit" className="inline-flex items-center mt-4 text-sm font-medium text-gblue hover:underline">
-                See the full kit →
-              </Link>
-            </div>
-            <div className="sm:col-span-2 grid sm:grid-cols-3 gap-4">
-              <KitTile color="bg-gblue" title="Starter repo" body="Scaffolded folder with context/, helper prompts, and pre-flight scripts." />
-              <KitTile color="bg-gred" title="Codelab" body="A step-by-step guide that gets a participant from zero to a working app in 45 minutes." />
-              <KitTile color="bg-ggreen" title="Spec Talk card" body="The 5 Spec Talk questions on one printable. Hang it in the room." />
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* The rhythm */}
       <section className="container-page py-20">
         <div className="grid sm:grid-cols-2 gap-12 items-start">
           <div>
             <div className="section-eyebrow">The rhythm of a jam</div>
-            <h2 className="h-display text-3xl mt-2">Two hours, five movements.</h2>
+            <h2 className="h-display text-3xl mt-2">Two hours, four movements.</h2>
             <p className="text-ash mt-4 max-w-md">
               Predictable, fast-paced, engaging. We keep the talking short and the building long. Organizers act as
               facilitators, guiding the room through a unified creative process.
@@ -121,72 +99,31 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* The Spec Talk */}
-      <section className="bg-cloud border-y border-line">
-        <div className="container-page py-20">
-          <div className="grid sm:grid-cols-2 gap-12 items-start">
-            <div>
-              <div className="section-eyebrow">The Spec Talk</div>
-              <h2 className="h-display text-3xl mt-2">
-                The skill participants take home.
-              </h2>
-              <p className="text-ash mt-4">
-                The apps are how the room practices. The <span className="font-medium text-ink">Spec Talk</span> is
-                what participants take home. Two minutes of structured talking — five questions, a sharpie, and a
-                projector — shapes the next 45 minutes of building.
-              </p>
-              <p className="text-ash mt-3">
-                Eight reps over eight tracks. The apps are the practice; the Spec Talk is the muscle. By Track 8,
-                participants are running it solo on their own original ideas.
-              </p>
-              <p className="text-ash mt-3">
-                In Antigravity, the Spec Talk becomes the PRD — and the PRD generates the UI doc, the engineering
-                doc, and the code. The <span className="font-medium text-ink">fix-the-doc-not-the-code</span> loop
-                starts here.
-              </p>
-              <p className="mt-4 text-sm text-ash italic border-l-2 border-line pl-3">
-                &ldquo;Demo first, theory never&rdquo; — participants see something cool, then build their version.
-                No lectures on tool calls or prompt engineering.
-              </p>
-            </div>
-            <ol className="card divide-y divide-line">
-              {SPEC_TALK_QUESTIONS.map((q) => (
-                <li key={q.n} className="flex gap-4 px-5 py-4">
-                  <div className="shrink-0 h-9 w-9 rounded-lg bg-cloud text-ink flex items-center justify-center font-display font-bold">
-                    {q.n}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-display font-semibold text-ink">{q.name}</div>
-                    <div className="text-sm text-ash mt-0.5">{q.ask}</div>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
-      </section>
-
       {/* Independence + optional throughline */}
       <section className="container-page py-20">
         <div className="grid sm:grid-cols-2 gap-12 items-start">
           <div>
-            <div className="section-eyebrow">Independent by design</div>
-            <h2 className="h-display text-3xl mt-2">Eight standalone apps. Pick any one.</h2>
+            <div className="section-eyebrow">Your room, your topic</div>
+            <h2 className="h-display text-3xl mt-2">Set your own topic. Or borrow one of nine.</h2>
             <p className="text-ash mt-4">
-              Every track is a complete, drop-in project that ships in two hours. They don&rsquo;t depend on each
-              other. Start with whichever sounds most fun for your community.
+              The organizer running the room decides what it builds. Point at your own dataset, take on
+              something your city actually needs, or write a brief from scratch — the format holds either
+              way, because the two hours are what make it a jam, not the subject.
             </p>
             <p className="text-ash mt-3">
-              <span className="font-medium text-ink">Shared skill, not shared codebase.</span> The Spec Talk is the
-              connective tissue — eight reps over eight tracks.
+              <span className="font-medium text-ink">No idea where to start?</span> Take one of the nine
+              built-in topics instead. Eight are complete, drop-in projects that ship in two hours, brief
+              and starter repo already written; the ninth is an open canvas for a room that wants to
+              invent its own thing. They don&rsquo;t depend on each other — pick whichever sounds most fun
+              for your community and go.
             </p>
             <div className="mt-6 card p-4 bg-cloud/40">
               <div className="text-xs uppercase tracking-widest font-semibold text-ash">Loose grouping (if curious)</div>
               <ul className="mt-2 text-sm text-ink space-y-1.5">
                 <li><span className="font-mono text-xs text-ash mr-2">01–02</span> Image-gen pair — same tech, different prompt patterns</li>
                 <li><span className="font-mono text-xs text-ash mr-2">03</span> The turn — from pretty things to organizing your life</li>
-                <li><span className="font-mono text-xs text-ash mr-2">04–07</span> Language-driven utility</li>
-                <li><span className="font-mono text-xs text-ash mr-2">08</span> Open canvas — graduation</li>
+                <li><span className="font-mono text-xs text-ash mr-2">04–08</span> Language-driven utility</li>
+                <li><span className="font-mono text-xs text-ash mr-2">09</span> Open canvas — bring your own idea</li>
               </ul>
             </div>
           </div>
@@ -220,7 +157,7 @@ export default function AboutPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-3 sm:justify-end">
-              <Link href="/#lineup" className="btn bg-white text-ink hover:shadow-pop">
+              <Link href="/#jams" className="btn bg-white text-ink hover:shadow-pop">
                 Browse the lineup
               </Link>
               <Link href="/organizer" className="btn border border-white/30 text-white hover:bg-white/10">
@@ -250,15 +187,6 @@ function ValueCard({ accent, title, body }: { accent: string; title: string; bod
   );
 }
 
-function KitTile({ color, title, body }: { color: string; title: string; body: string }) {
-  return (
-    <div className="card p-5">
-      <div className={`h-2 w-10 rounded-full ${color} mb-4`} />
-      <div className="font-display font-semibold text-ink">{title}</div>
-      <p className="text-sm text-ash mt-2 leading-relaxed">{body}</p>
-    </div>
-  );
-}
 
 function ArcRow({ label, body, color }: { label: string; body: string; color: string }) {
   return (

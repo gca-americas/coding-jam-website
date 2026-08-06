@@ -2,8 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import SubmitForm from "@/app/submit/SubmitForm";
 import SignInGate from "@/app/submit/SignInGate";
-import { TRACKS } from "@/lib/tracks";
 import { getProjectById } from "@/lib/projects";
+import { getJam, jamsOpenForSubmission, listPublishedJams } from "@/lib/jams";
+import { parseChapter } from "@/lib/chapters";
 import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +30,27 @@ export default async function EditProjectPage({ params }: { params: Promise<{ id
     notFound();
   }
 
+  // Parsed on the server so the ~1,500-entry directories stay out of the bundle.
+  // Legacy labels that don't resolve fall back to the free-text "other" type.
+  const parsed = project.chapterType
+    ? { type: project.chapterType, name: project.chapterName ?? project.chapter }
+    : parseChapter(project.chapter);
+
+  // Offer the same two-week window as a fresh submission, plus whichever jam
+  // this build is already credited to — otherwise editing an older build would
+  // silently drop its jam the moment the window moved past it.
+  const window = jamsOpenForSubmission(await listPublishedJams());
+  const current =
+    project.jamSlug && !window.some((j) => j.slug === project.jamSlug)
+      ? await getJam(project.jamSlug)
+      : null;
+  const jamChoices = [...(current ? [current] : []), ...window].map((j) => ({
+    slug: j.slug,
+    title: j.title,
+    chapter: j.chapter,
+    eventDate: j.eventDate,
+  }));
+
   return (
     <>
       <section className="relative overflow-hidden">
@@ -48,7 +70,7 @@ export default async function EditProjectPage({ params }: { params: Promise<{ id
       <section className="container-page py-10 pb-20">
         <SubmitForm
           editId={project.id}
-          tracks={TRACKS.map((t) => ({ number: t.number, project: t.project }))}
+          jamChoices={jamChoices}
           builder={{
             name: user!.name!,
             email: user!.email!,
@@ -56,8 +78,10 @@ export default async function EditProjectPage({ params }: { params: Promise<{ id
           }}
           initial={{
             trackNumber: project.trackNumber,
+            jamSlug: project.jamSlug,
             projectName: project.projectName,
-            chapter: project.chapter,
+            chapterType: parsed.type,
+            chapterName: parsed.name,
             country: project.country,
             repoUrl: project.repoUrl,
             demoUrl: project.demoUrl,
@@ -66,6 +90,7 @@ export default async function EditProjectPage({ params }: { params: Promise<{ id
             description: project.description,
             surprise: project.surprise,
             collaboratorEmails: project.collaboratorEmails,
+            googleTech: project.googleTech,
           }}
         />
       </section>

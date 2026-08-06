@@ -10,7 +10,10 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  /* Not `smooth`: in Chrome that silently cancels every in-page anchor jump on
+     this site — #jams, #lineup, #kit and the rest land on the URL but never
+     scroll. Instant jumps are also what a screen-reader user expects. */
+  scroll-behavior: auto;
 }
 
 body {
