@@ -169,7 +169,7 @@ DEPLOY_FLAGS=(
   --max-instances 10
   --memory 512Mi
   --cpu 1
-  --update-env-vars "GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GCS_UPLOADS_BUCKET=${UPLOADS_BUCKET}"
+  --update-env-vars "GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GCS_UPLOADS_BUCKET=${UPLOADS_BUCKET},GOOGLE_GENAI_USE_ENTERPRISE=true,GOOGLE_CLOUD_LOCATION=global"
   --quiet
 )
 if [[ -n "${MOUNT_SECRETS}" ]]; then
