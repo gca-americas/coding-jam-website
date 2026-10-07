@@ -172,6 +172,37 @@ export default async function JamPage({ params }: { params: Promise<{ slug: stri
             )}
           </div>
 
+          {view.track?.programDetails && (
+            <>
+              <div className="card p-6">
+                <div className="section-eyebrow">Scoring at a glance</div>
+                <div className="mt-3 space-y-2.5 text-sm">
+                  {view.track.programDetails.rubric.map((r) => (
+                    <div key={r.pillar} className="flex items-center justify-between gap-2">
+                      <span className="text-ink font-medium">{r.pillar.replace(/^\d+\.\s*/, "")}</span>
+                      <span className={`chip ${c.chip} font-mono text-xs shrink-0`}>{r.weight}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-xs font-mono text-ash">
+                  <span>Total Standard Score</span>
+                  <span className="font-bold text-ink">100 Pts</span>
+                </div>
+              </div>
+
+              <div className="card p-6 bg-cloud/50">
+                <div className="text-xs uppercase tracking-widest font-semibold text-ash">
+                  Open-source requirement
+                </div>
+                <p className="text-sm text-ink mt-2 leading-relaxed">
+                  Teams retain <strong>100% IP ownership</strong>. All submitted code must be released publicly under{" "}
+                  <strong>Apache License 2.0</strong>, with docs and synthetic evaluation datasets under{" "}
+                  <strong>CC-BY 4.0 or CC0</strong>.
+                </p>
+              </div>
+            </>
+          )}
+
           {links.length > 0 && (
             <div className="card p-6">
               <div className="section-eyebrow">What you&rsquo;ll need</div>

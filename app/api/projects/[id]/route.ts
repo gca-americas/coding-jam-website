@@ -83,8 +83,8 @@ export async function PATCH(
 
   if (body.trackNumber !== undefined) {
     const n = Number(body.trackNumber);
-    if (!Number.isInteger(n) || n < 0 || n > 9) {
-      return NextResponse.json({ error: "trackNumber must be 0–9" }, { status: 400 });
+    if (!Number.isInteger(n) || n < 0 || n > 10) {
+      return NextResponse.json({ error: "trackNumber must be 0–10" }, { status: 400 });
     }
     patch.trackNumber = n;
   }

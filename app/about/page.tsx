@@ -121,6 +121,7 @@ export default function AboutPage() {
               <div className="text-xs uppercase tracking-widest font-semibold text-ash">Loose grouping (if curious)</div>
               <ul className="mt-2 text-sm text-ink space-y-1.5">
                 <li><span className="font-mono text-xs text-ash mr-2">01–02</span> Image-gen pair — same tech, different prompt patterns</li>
+                <li><span className="font-mono text-xs text-ash mr-2">10</span> AI for Good</li>
                 <li><span className="font-mono text-xs text-ash mr-2">03</span> The turn — from pretty things to organizing your life</li>
                 <li><span className="font-mono text-xs text-ash mr-2">04–08</span> Language-driven utility</li>
                 <li><span className="font-mono text-xs text-ash mr-2">09</span> Open canvas — bring your own idea</li>

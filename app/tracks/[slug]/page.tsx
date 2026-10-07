@@ -6,6 +6,7 @@ import { listProjects } from "@/lib/projects";
 import ProjectCard from "@/components/ProjectCard";
 import Timeline from "@/components/Timeline";
 import CopyableCode from "@/components/CopyableCode";
+import { ProgramDetailsSections } from "@/components/TopicBody";
 
 export function generateStaticParams() {
   return TRACKS.map((t) => ({ slug: t.slug }));
@@ -62,6 +63,7 @@ export default async function TrackPage({ params }: { params: Promise<{ slug: st
   const others = TRACKS.filter((t) => t.slug !== track.slug);
   const idx = TRACKS.findIndex((t) => t.slug === track.slug);
   const suggestions = [others[(idx + 1) % others.length], others[(idx + 3) % others.length]];
+  const program = track.programDetails;
 
   return (
     <>
@@ -83,153 +85,204 @@ export default async function TrackPage({ params }: { params: Promise<{ slug: st
                 {track.dropIn && (
                   <span className="chip bg-white/20 text-white backdrop-blur-sm">✅ Drop-in friendly</span>
                 )}
-                <span className="chip bg-white/20 text-white backdrop-blur-sm">2-hour jam</span>
-                <span className="chip bg-white/20 text-white backdrop-blur-sm">Ships in 45 min</span>
+                {program ? (
+                  program.badges.map((b) => (
+                    <span key={b} className="chip bg-white/20 text-white backdrop-blur-sm">
+                      {b}
+                    </span>
+                  ))
+                ) : (
+                  <>
+                    <span className="chip bg-white/20 text-white backdrop-blur-sm">2-hour jam</span>
+                    <span className="chip bg-white/20 text-white backdrop-blur-sm">Ships in 45 min</span>
+                  </>
+                )}
               </div>
             </div>
             <div className="text-[120px] sm:text-[160px] leading-none drop-shadow-lg">{track.emoji}</div>
           </div>
 
           <div className="mt-10 flex flex-wrap gap-3">
-            <a href={track.codelabUrl} target="_blank" rel="noreferrer" className="btn bg-white text-ink hover:shadow-pop">
-              Open the Codelab ↗
-            </a>
-            <a href={track.starterRepo} target="_blank" rel="noreferrer" className="btn border border-white/40 text-white hover:bg-white/10">
-              Starter repo
-            </a>
-            <a href={track.videoUrl} className="btn border border-white/40 text-white hover:bg-white/10">
-              Demo video
-            </a>
-            <Link href="/submit" className="btn border border-white/40 text-white hover:bg-white/10">
-              Share your build →
-            </Link>
+            {program ? (
+              <>
+                <a href="#rubric" className="btn bg-white text-ink hover:shadow-pop">
+                  100-Point Evaluation Rubric ↓
+                </a>
+                <a href="#overview" className="btn border border-white/40 text-white hover:bg-white/10">
+                  Concept Overview
+                </a>
+                <a href="#licensing" className="btn border border-white/40 text-white hover:bg-white/10">
+                  IP &amp; Open Source Rules
+                </a>
+                <Link href="/submit" className="btn border border-white/40 text-white hover:bg-white/10">
+                  Share your build →
+                </Link>
+              </>
+            ) : (
+              <>
+                <a href={track.codelabUrl} target="_blank" rel="noreferrer" className="btn bg-white text-ink hover:shadow-pop">
+                  Open the Codelab ↗
+                </a>
+                {track.starterRepo && (
+                  <a href={track.starterRepo} target="_blank" rel="noreferrer" className="btn border border-white/40 text-white hover:bg-white/10">
+                    Starter repo
+                  </a>
+                )}
+                {track.videoUrl && (
+                  <a href={track.videoUrl} className="btn border border-white/40 text-white hover:bg-white/10">
+                    Demo video
+                  </a>
+                )}
+                <Link href="/submit" className="btn border border-white/40 text-white hover:bg-white/10">
+                  Share your build →
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
 
       <div className="container-page py-16 grid lg:grid-cols-3 gap-12">
         <div className="lg:col-span-2 space-y-12">
-          {/* Demo — shown first: video sells the track in 3 seconds */}
-          <section>
-            <div className="section-eyebrow">The demo</div>
-            <h2 className="h-display text-2xl mt-2">What it looks like when it&rsquo;s working</h2>
-            <div className="mt-5">
-              {track.youtubeId ? (
-                <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-line shadow-lift">
-                  <iframe
-                    src={`https://www.youtube-nocookie.com/embed/${track.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${track.youtubeId}&controls=0&disablekb=1&modestbranding=1&rel=0&playsinline=1`}
-                    title={`${track.project} demo`}
-                    allow="autoplay; encrypted-media; picture-in-picture"
-                    loading="lazy"
-                    className="absolute inset-0 w-full h-full pointer-events-none"
-                  />
+          {program ? (
+            <>
+              <ProgramDetailsSections details={program} color={track.color} />
+              <section>
+                <div className="section-eyebrow">The 2-hour Jam rhythm</div>
+                <h3 className="h-display text-2xl mt-2">How the night flows</h3>
+                <p className="text-sm text-ash mt-1 max-w-xl">
+                  Every Coding Jam follows the same five-phase shape. Talking is short, building is long.
+                </p>
+                <div className="mt-6">
+                  <Timeline />
                 </div>
-              ) : track.screenshotUrl ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={track.screenshotUrl}
-                  alt={`${track.project} demo`}
-                  className="w-full rounded-2xl border border-line shadow-lift"
-                />
-              ) : (
-                <div
-                  className={`relative w-full aspect-[16/9] rounded-2xl border-2 border-dashed ${c.border}/40 ${c.bgSoft} overflow-hidden flex items-center justify-center`}
-                >
-                  <div className="absolute inset-0 dotted-bg opacity-40" />
-                  <div
-                    className="absolute right-4 bottom-2 sm:right-8 sm:bottom-4 text-[140px] sm:text-[200px] leading-none select-none opacity-15"
-                    aria-hidden
-                  >
-                    {track.emoji}
-                  </div>
-                  <div className="relative text-center px-6">
-                    <div className={`section-eyebrow ${c.text}`}>Demo video goes here</div>
-                    <p className="font-display font-semibold text-ink mt-2 text-lg">
-                      Demo of <span className={c.text}>{track.project}</span>
-                    </p>
-                    <p className="text-xs text-ash mt-2 max-w-sm mx-auto">
-                      Drop the 11-char YouTube ID into <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-line text-[11px]">youtubeId</code> on this track in <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-line text-[11px]">lib/tracks.ts</code>.
-                    </p>
-                  </div>
+              </section>
+            </>
+          ) : (
+            <>
+              {/* Demo — shown first: video sells the track in 3 seconds */}
+              <section>
+                <div className="section-eyebrow">The demo</div>
+                <h2 className="h-display text-2xl mt-2">What it looks like when it&rsquo;s working</h2>
+                <div className="mt-5">
+                  {track.youtubeId ? (
+                    <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-line shadow-lift">
+                      <iframe
+                        src={`https://www.youtube-nocookie.com/embed/${track.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${track.youtubeId}&controls=0&disablekb=1&modestbranding=1&rel=0&playsinline=1`}
+                        title={`${track.project} demo`}
+                        allow="autoplay; encrypted-media; picture-in-picture"
+                        loading="lazy"
+                        className="absolute inset-0 w-full h-full pointer-events-none"
+                      />
+                    </div>
+                  ) : track.screenshotUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={track.screenshotUrl}
+                      alt={`${track.project} demo`}
+                      className="w-full rounded-2xl border border-line shadow-lift"
+                    />
+                  ) : (
+                    <div
+                      className={`relative w-full aspect-[16/9] rounded-2xl border-2 border-dashed ${c.border}/40 ${c.bgSoft} overflow-hidden flex items-center justify-center`}
+                    >
+                      <div className="absolute inset-0 dotted-bg opacity-40" />
+                      <div
+                        className="absolute right-4 bottom-2 sm:right-8 sm:bottom-4 text-[140px] sm:text-[200px] leading-none select-none opacity-15"
+                        aria-hidden
+                      >
+                        {track.emoji}
+                      </div>
+                      <div className="relative text-center px-6">
+                        <div className={`section-eyebrow ${c.text}`}>Demo video goes here</div>
+                        <p className="font-display font-semibold text-ink mt-2 text-lg">
+                          Demo of <span className={c.text}>{track.project}</span>
+                        </p>
+                        <p className="text-xs text-ash mt-2 max-w-sm mx-auto">
+                          Drop the 11-char YouTube ID into <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-line text-[11px]">youtubeId</code> on this track in <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-line text-[11px]">lib/tracks.ts</code>.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
+              </section>
+
+              {/* What you'll build — text follows the visual */}
+              <section>
+                <div className="section-eyebrow">In the room · 45 minutes</div>
+                <h3 className="h-display text-2xl mt-2">What you&rsquo;ll build</h3>
+                <p className="text-ink mt-4 leading-relaxed text-lg">{track.mmv}</p>
+              </section>
+
+              {/* The moment it clicks */}
+              <section className={`card p-6 ${c.bgSoft} border-0 ring-1 ${c.ring}/30`}>
+                <div className={`section-eyebrow ${c.text}`}>The moment it clicks</div>
+                <p className="mt-2 text-ink text-xl font-display italic leading-snug">
+                  &ldquo;{track.aha}&rdquo;
+                </p>
+              </section>
+
+              {/* Things to think about while you build */}
+              <section>
+                <div className="section-eyebrow">Things to think about</div>
+                <h3 className="h-display text-2xl mt-2">While you build</h3>
+                <ul className="mt-5 space-y-3">
+                  {track.thinkAbout.map((w) => (
+                    <li key={w} className="flex gap-3">
+                      <span className={`mt-2 h-1.5 w-1.5 rounded-full shrink-0 ${c.bg}`} />
+                      <span className="text-ink">{w}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              {/* The 2-hour rhythm — KEEP */}
+              <section>
+                <div className="section-eyebrow">The 2-hour Jam rhythm</div>
+                <h3 className="h-display text-2xl mt-2">How the night flows</h3>
+                <p className="text-sm text-ash mt-1 max-w-xl">
+                  Every Coding Jam follows the same five-phase shape. Talking is short, building is long.
+                </p>
+                <div className="mt-6">
+                  <Timeline />
+                </div>
+              </section>
+
+              {/* Polished version */}
+              <section>
+                <div className="section-eyebrow">Polished version pulls in</div>
+                <h3 className="h-display text-2xl mt-2">Where to take it after the jam</h3>
+                <p className="text-sm text-ash mt-1 max-w-xl">
+                  The 45-minute build is the win in the room. These are the ideas you can pull in over the next week —
+                  your homework isn&rsquo;t homework, it&rsquo;s the polished version.
+                </p>
+                <ul className="mt-5 grid sm:grid-cols-2 gap-2">
+                  {track.polished.map((p) => (
+                    <li key={p} className="flex gap-2 items-start text-sm">
+                      <span className={`mt-1 h-1.5 w-1.5 rounded-full shrink-0 ${c.bg}`} />
+                      <span className="text-ink">{p}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              {/* If stuck */}
+              {track.ifStuck.length > 0 && (
+                <section className="card p-5 bg-cloud/40">
+                  <div className="section-eyebrow">If you get stuck</div>
+                  <p className="text-sm text-ash mt-2">
+                    Open one of these in the starter — safety nets, not requirements.
+                  </p>
+                  <ul className="mt-3 flex flex-wrap gap-2">
+                    {track.ifStuck.map((f) => (
+                      <li key={f}>
+                        <code className="chip bg-white border border-line text-ink font-mono text-xs">{f}</code>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               )}
-            </div>
-          </section>
-
-          {/* What you'll build — text follows the visual */}
-          <section>
-            <div className="section-eyebrow">In the room · 45 minutes</div>
-            <h3 className="h-display text-2xl mt-2">What you&rsquo;ll build</h3>
-            <p className="text-ink mt-4 leading-relaxed text-lg">{track.mmv}</p>
-          </section>
-
-          {/* The moment it clicks */}
-          <section className={`card p-6 ${c.bgSoft} border-0 ring-1 ${c.ring}/30`}>
-            <div className={`section-eyebrow ${c.text}`}>The moment it clicks</div>
-            <p className="mt-2 text-ink text-xl font-display italic leading-snug">
-              &ldquo;{track.aha}&rdquo;
-            </p>
-          </section>
-
-          {/* Things to think about while you build */}
-          <section>
-            <div className="section-eyebrow">Things to think about</div>
-            <h3 className="h-display text-2xl mt-2">While you build</h3>
-            <ul className="mt-5 space-y-3">
-              {track.thinkAbout.map((w) => (
-                <li key={w} className="flex gap-3">
-                  <span className={`mt-2 h-1.5 w-1.5 rounded-full shrink-0 ${c.bg}`} />
-                  <span className="text-ink">{w}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {/* The 2-hour rhythm — KEEP */}
-          <section>
-            <div className="section-eyebrow">The 2-hour Jam rhythm</div>
-            <h3 className="h-display text-2xl mt-2">How the night flows</h3>
-            <p className="text-sm text-ash mt-1 max-w-xl">
-              Every Coding Jam follows the same five-phase shape. Talking is short, building is long.
-            </p>
-            <div className="mt-6">
-              <Timeline />
-            </div>
-          </section>
-
-          {/* Polished version */}
-          <section>
-            <div className="section-eyebrow">Polished version pulls in</div>
-            <h3 className="h-display text-2xl mt-2">Where to take it after the jam</h3>
-            <p className="text-sm text-ash mt-1 max-w-xl">
-              The 45-minute build is the win in the room. These are the ideas you can pull in over the next week —
-              your homework isn&rsquo;t homework, it&rsquo;s the polished version.
-            </p>
-            <ul className="mt-5 grid sm:grid-cols-2 gap-2">
-              {track.polished.map((p) => (
-                <li key={p} className="flex gap-2 items-start text-sm">
-                  <span className={`mt-1 h-1.5 w-1.5 rounded-full shrink-0 ${c.bg}`} />
-                  <span className="text-ink">{p}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {/* If stuck */}
-          {track.ifStuck.length > 0 && (
-            <section className="card p-5 bg-cloud/40">
-              <div className="section-eyebrow">If you get stuck</div>
-              <p className="text-sm text-ash mt-2">
-                Open one of these in the starter — safety nets, not requirements.
-              </p>
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {track.ifStuck.map((f) => (
-                  <li key={f}>
-                    <code className="chip bg-white border border-line text-ink font-mono text-xs">{f}</code>
-                  </li>
-                ))}
-              </ul>
-            </section>
+            </>
           )}
 
           {/* Community builds */}
@@ -276,47 +329,117 @@ export default async function TrackPage({ params }: { params: Promise<{ slug: st
             </ul>
           </div>
 
-          <div className="card p-6">
-            <div className="section-eyebrow">Run it yourself</div>
-            <p className="text-xs text-ash mt-2">After the jam, on your own machine.</p>
-            <CopyableCode
-              code={`git clone https://github.com/gca-americas/coding-jam
+          {program ? (
+            <>
+              <div className="card p-6">
+                <div className="section-eyebrow">Scoring at a glance</div>
+                <div className="mt-3 space-y-2.5 text-sm">
+                  {program.rubric.map((r) => (
+                    <div key={r.pillar} className="flex items-center justify-between gap-2">
+                      <span className="text-ink font-medium">{r.pillar.replace(/^\d+\.\s*/, "")}</span>
+                      <span className={`chip ${c.chip} font-mono text-xs shrink-0`}>{r.weight}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-xs font-mono text-ash">
+                  <span>Total Standard Score</span>
+                  <span className="font-bold text-ink">100 Pts</span>
+                </div>
+              </div>
+
+              <div className="card p-6 bg-cloud/50">
+                <div className="text-xs uppercase tracking-widest font-semibold text-ash">
+                  Open-source requirement
+                </div>
+                <p className="text-sm text-ink mt-2 leading-relaxed">
+                  Teams retain <strong>100% IP ownership</strong>. All submitted code must be released publicly under{" "}
+                  <strong>Apache License 2.0</strong>, with docs and synthetic evaluation datasets under{" "}
+                  <strong>CC-BY 4.0 or CC0</strong>.
+                </p>
+              </div>
+
+              <div className="card p-6">
+                <div className="section-eyebrow">Quick links</div>
+                <div className="mt-4 space-y-2">
+                  <a
+                    href="#rubric"
+                    className={`flex items-center justify-between rounded-lg ${c.bgSoft} ${c.text} px-3 py-2 text-sm font-semibold hover:brightness-95 transition`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>⚖️</span> 100-Point Evaluation Rubric
+                    </span>
+                    <span>↓</span>
+                  </a>
+                  <a
+                    href="#licensing"
+                    className="flex items-center justify-between text-sm font-medium text-ink hover:text-gblue px-3 py-1.5"
+                  >
+                    IP &amp; Apache 2.0 Licensing <span>↓</span>
+                  </a>
+                  <a
+                    href="#attestation"
+                    className="flex items-center justify-between text-sm font-medium text-ink hover:text-gblue px-3 py-1.5"
+                  >
+                    Attestation &amp; Showcase Rights <span>↓</span>
+                  </a>
+                  <Link
+                    href="/organizer/jams"
+                    className="flex items-center justify-between text-sm font-medium text-ink hover:text-gblue px-3 py-1.5"
+                  >
+                    Host a chapter sprint <span>→</span>
+                  </Link>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="card p-6">
+                <div className="section-eyebrow">Run it yourself</div>
+                <p className="text-xs text-ash mt-2">After the jam, on your own machine.</p>
+                <CopyableCode
+                  code={`git clone https://github.com/gca-americas/coding-jam
 cd coding-jam/${track.starterRepo.split("/").pop() ?? track.slug}
 # follow the codelab for Antigravity
 # setup + .env`}
-            />
-          </div>
+                />
+              </div>
 
-          <div className="card p-6">
-            <div className="section-eyebrow">Quick links</div>
-            <div className="mt-4 space-y-2">
-              <a
-                href={track.codelabUrl}
-                target="_blank"
-                rel="noreferrer"
-                className={`flex items-center justify-between rounded-lg ${c.bgSoft} ${c.text} px-3 py-2 text-sm font-semibold hover:brightness-95 transition`}
-              >
-                <span className="flex items-center gap-2">
-                  <span>📘</span> Codelab
-                </span>
-                <span>↗</span>
-              </a>
-              <a href={track.starterRepo} target="_blank" rel="noreferrer" className="flex items-center justify-between text-sm font-medium text-ink hover:text-gblue px-3 py-1.5">
-                Starter repo <span>↗</span>
-              </a>
-              <a href={track.videoUrl} className="flex items-center justify-between text-sm font-medium text-ink hover:text-gblue px-3 py-1.5">
-                Demo video <span>→</span>
-              </a>
-            </div>
-          </div>
+              <div className="card p-6">
+                <div className="section-eyebrow">Quick links</div>
+                <div className="mt-4 space-y-2">
+                  <a
+                    href={track.codelabUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={`flex items-center justify-between rounded-lg ${c.bgSoft} ${c.text} px-3 py-2 text-sm font-semibold hover:brightness-95 transition`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>📘</span> Codelab
+                    </span>
+                    <span>↗</span>
+                  </a>
+                  {track.starterRepo && (
+                    <a href={track.starterRepo} target="_blank" rel="noreferrer" className="flex items-center justify-between text-sm font-medium text-ink hover:text-gblue px-3 py-1.5">
+                      Starter repo <span>↗</span>
+                    </a>
+                  )}
+                  {track.videoUrl && (
+                    <a href={track.videoUrl} className="flex items-center justify-between text-sm font-medium text-ink hover:text-gblue px-3 py-1.5">
+                      Demo video <span>→</span>
+                    </a>
+                  )}
+                </div>
+              </div>
 
-          <div className="card p-6 bg-cloud/50">
-            <div className="text-xs uppercase tracking-widest font-semibold text-ash">Drop-in?</div>
-            <p className="text-sm text-ink mt-2 leading-relaxed">
-              First time here? You&rsquo;re in the right place. Every track is independent — you&rsquo;re not behind.
-              Open the Codelab and you&rsquo;ll ship a real app today.
-            </p>
-          </div>
+              <div className="card p-6 bg-cloud/50">
+                <div className="text-xs uppercase tracking-widest font-semibold text-ash">Drop-in?</div>
+                <p className="text-sm text-ink mt-2 leading-relaxed">
+                  First time here? You&rsquo;re in the right place. Every track is independent — you&rsquo;re not behind.
+                  Open the Codelab and you&rsquo;ll ship a real app today.
+                </p>
+              </div>
+            </>
+          )}
 
           <Link href="/submit" className="btn-google w-full">
             Share your build →

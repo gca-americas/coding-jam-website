@@ -9,6 +9,8 @@
 
 import { Storage } from "@google-cloud/storage";
 import { randomBytes } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MiB
 const ALLOWED_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
@@ -29,11 +31,6 @@ export class UploadError extends Error {
 }
 
 export async function uploadScreenshot(file: File, prefix: string): Promise<UploadResult> {
-  const bucketName = process.env.GCS_UPLOADS_BUCKET;
-  if (!bucketName) {
-    throw new UploadError(500, "Upload bucket is not configured (set GCS_UPLOADS_BUCKET).");
-  }
-
   if (!ALLOWED_TYPES.has(file.type)) {
     throw new UploadError(415, `Unsupported image type: ${file.type || "unknown"}`);
   }
@@ -46,10 +43,21 @@ export async function uploadScreenshot(file: File, prefix: string): Promise<Uplo
 
   const ext = extensionFor(file.type);
   const objectName = `${prefix}/${randomBytes(12).toString("hex")}${ext}`;
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  const bucketName = process.env.GCS_UPLOADS_BUCKET;
+  if (!bucketName) {
+    if (process.env.NODE_ENV !== "production") {
+      const targetPath = path.join(process.cwd(), "public", "uploads", objectName);
+      await mkdir(path.dirname(targetPath), { recursive: true });
+      await writeFile(targetPath, buffer);
+      return { url: `/uploads/${objectName}` };
+    }
+    throw new UploadError(500, "Upload bucket is not configured (set GCS_UPLOADS_BUCKET).");
+  }
 
   const bucket = getStorage().bucket(bucketName);
   const blob = bucket.file(objectName);
-  const buffer = Buffer.from(await file.arrayBuffer());
 
   await blob.save(buffer, {
     contentType: file.type,

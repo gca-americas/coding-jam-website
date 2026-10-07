@@ -73,7 +73,12 @@ export const LINK_FIELDS: Array<{
 ];
 
 export type Topic =
-  | { kind: "track"; trackSlug: string }
+  | {
+      kind: "track";
+      trackSlug: string;
+      color?: GColor;
+      heroImageUrl?: string;
+    }
   | {
       kind: "custom";
       title: string;
@@ -163,16 +168,22 @@ export function topicView(topic: Topic): TopicView {
           kind: "track",
           title: "Topic unavailable",
           tagline: "This jam points at a track that no longer exists.",
-          color: "blue",
+          color: topic.color ?? "blue",
           emoji: "❓",
           mmv: "",
           thinkAbout: [],
           tech: [],
           polished: [],
           links: {},
+          heroImageUrl: topic.heroImageUrl,
         };
       }
-      return topicViewFromTrack(track);
+      const base = topicViewFromTrack(track);
+      return {
+        ...base,
+        color: topic.color ?? base.color,
+        heroImageUrl: topic.heroImageUrl ?? base.heroImageUrl,
+      };
     }
 
     case "custom":
@@ -249,9 +260,32 @@ export function safeUrl(v: unknown): string | null {
  * rendering an image nobody here can moderate or take down.
  */
 export function isOwnedUploadUrl(url: string, prefix = "jams/"): boolean {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    url.startsWith(`/uploads/${prefix}`) &&
+    !url.includes("..")
+  ) {
+    return true;
+  }
   const bucket = process.env.GCS_UPLOADS_BUCKET;
   if (!bucket) return false;
   return url.startsWith(`https://storage.googleapis.com/${bucket}/${prefix}`);
+}
+
+function parseHeroImageUrl(rawHero: string): { url?: string } | { error: string } {
+  if (!rawHero) return {};
+  if (process.env.NODE_ENV !== "production" && rawHero.startsWith("/uploads/")) {
+    if (!isOwnedUploadUrl(rawHero)) {
+      return { error: "Hero image must be uploaded here rather than linked from another site." };
+    }
+    return { url: rawHero };
+  }
+  const url = safeUrl(rawHero);
+  if (!url) return { error: "Hero image must be a full https:// link." };
+  if (!isOwnedUploadUrl(url)) {
+    return { error: "Hero image must be uploaded here rather than linked from another site." };
+  }
+  return { url };
 }
 
 function parseList(
@@ -307,7 +341,17 @@ export function parseTopic(input: unknown): TopicParse {
     const trackSlug = str(src.trackSlug);
     if (!trackSlug) return { error: "Pick a track." };
     if (!getTrack(trackSlug)) return { error: "That track doesn't exist." };
-    return { topic: { kind: "track", trackSlug } };
+    const color: GColor | undefined = isGColor(src.color) ? src.color : undefined;
+    const hero = parseHeroImageUrl(str(src.heroImageUrl));
+    if ("error" in hero) return hero;
+    return {
+      topic: {
+        kind: "track",
+        trackSlug,
+        ...(color ? { color } : {}),
+        ...(hero.url ? { heroImageUrl: hero.url } : {}),
+      },
+    };
   }
 
   // kind === "custom" — a headline the room can read off a projector is the
@@ -341,16 +385,9 @@ export function parseTopic(input: unknown): TopicParse {
   }
   const emoji = rawEmoji || "✨";
 
-  let heroImageUrl: string | undefined;
-  const rawHero = str(src.heroImageUrl);
-  if (rawHero) {
-    const url = safeUrl(rawHero);
-    if (!url) return { error: "Hero image must be a full https:// link." };
-    if (!isOwnedUploadUrl(url)) {
-      return { error: "Hero image must be uploaded here rather than linked from another site." };
-    }
-    heroImageUrl = url;
-  }
+  const hero = parseHeroImageUrl(str(src.heroImageUrl));
+  if ("error" in hero) return hero;
+  const heroImageUrl = hero.url;
 
   return {
     topic: {

@@ -8,7 +8,14 @@ import { G_COLORS, LIMITS, LINK_FIELDS, type TopicKind, type TopicLinks } from "
 import { TOPIC_EXAMPLES } from "@/lib/topic-examples";
 import type { Jam } from "@/lib/jams";
 
-export type TrackOption = { slug: string; number: number; project: string; tagline: string; emoji: string };
+export type TrackOption = {
+  slug: string;
+  number: number;
+  project: string;
+  tagline: string;
+  emoji: string;
+  color?: string;
+};
 
 /* Per-kind state is kept side by side rather than in one shared bag, so
    flipping between topic kinds to compare them never destroys typed work. */
@@ -33,7 +40,7 @@ type Draft = {
 };
 
 const KIND_TABS: Array<{ value: TopicKind; label: string; blurb: string }> = [
-  { value: "track", label: "Pick a track", blurb: "Use one of the nine built-in jams. Nothing to write — your page pulls the brief, codelab, starter repo and demo video. Running an open jam with no set topic? That's Track 09." },
+  { value: "track", label: "Pick a track", blurb: "Use one of the ten built-in jams. Nothing to write — your page pulls the brief, codelab, starter repo and demo video. Running an open jam with no set topic? That's Track 09. Running a civic sprint? Pick Track 10." },
   { value: "custom", label: "Your own topic", blurb: "Bring your own codelab or dataset, write a topic from scratch, or both. Only the title and tagline are required — fill in as much of the rest as you want." },
 ];
 
@@ -56,11 +63,19 @@ function emptyDraft(defaults: { chapterType: ChapterType; chapterName: string; c
  * URL, its date, and its published state. So "run it again" lands on an unlisted
  * draft you set a new date on, never a second live page duplicating the first.
  */
-function draftForCopy(jam: Jam, defaults: Parameters<typeof emptyDraft>[0]): Draft {
-  return { ...draftFromJam(jam, defaults), slug: "", eventDate: "", status: "draft" };
+function draftForCopy(
+  jam: Jam,
+  defaults: Parameters<typeof emptyDraft>[0],
+  tracks: TrackOption[],
+): Draft {
+  return { ...draftFromJam(jam, defaults, tracks), slug: "", eventDate: "", status: "draft" };
 }
 
-function draftFromJam(jam: Jam, defaults: Parameters<typeof emptyDraft>[0]): Draft {
+function draftFromJam(
+  jam: Jam,
+  defaults: Parameters<typeof emptyDraft>[0],
+  tracks: TrackOption[],
+): Draft {
   const base = emptyDraft(defaults);
   const d: Draft = {
     ...base,
@@ -76,7 +91,15 @@ function draftFromJam(jam: Jam, defaults: Parameters<typeof emptyDraft>[0]): Dra
     kind: jam.topic.kind,
   };
   const t = jam.topic;
-  if (t.kind === "track") d.trackSlug = t.trackSlug;
+  if (t.kind === "track") {
+    d.trackSlug = t.trackSlug;
+    const trackDefaultColor = tracks.find((tr) => tr.slug === t.trackSlug)?.color ?? "blue";
+    d.custom = {
+      ...d.custom,
+      color: t.color ?? trackDefaultColor,
+      heroImageUrl: t.heroImageUrl ?? "",
+    };
+  }
   if (t.kind === "custom") {
     d.custom = {
       title: t.title, tagline: t.tagline, mmv: t.mmv ?? "",
@@ -93,7 +116,12 @@ function draftFromJam(jam: Jam, defaults: Parameters<typeof emptyDraft>[0]): Dra
 function topicPayload(d: Draft, heroImageUrl = d.custom.heroImageUrl) {
   switch (d.kind) {
     case "track":
-      return { kind: "track", trackSlug: d.trackSlug };
+      return {
+        kind: "track",
+        trackSlug: d.trackSlug,
+        color: d.custom.color,
+        heroImageUrl,
+      };
     case "custom":
       return {
         kind: "custom", title: d.custom.title, tagline: d.custom.tagline, mmv: d.custom.mmv,
@@ -129,8 +157,8 @@ export default function JamForm({
 }) {
   const router = useRouter();
   const [d, setD] = useState<Draft>(() =>
-    jam ? draftFromJam(jam, defaults)
-      : copyFrom ? draftForCopy(copyFrom, defaults)
+    jam ? draftFromJam(jam, defaults, tracks)
+      : copyFrom ? draftForCopy(copyFrom, defaults, tracks)
       : emptyDraft(defaults),
   );
   const [busy, setBusy] = useState(false);
@@ -194,9 +222,7 @@ export default function JamForm({
 
     try {
       let heroUrl = d.custom.heroImageUrl;
-      // Only the custom kind renders an image. Someone who picked a file and
-      // then switched to a track shouldn't leave an orphan in the bucket.
-      const wantsUpload = Boolean(heroFile) && d.kind === "custom";
+      const wantsUpload = Boolean(heroFile);
 
       // Editing: the jam already owns a folder, so the image can go up first
       // and the save carries its URL in one write.
@@ -393,7 +419,23 @@ export default function JamForm({
 
         {d.kind === "track" && (
           <Field label="Which track?" hint="Your jam page shows this track's brief, codelab and demo. Track 09 is the open one — no set topic, everyone brings their own idea.">
-            <select required className="input" value={d.trackSlug} onChange={(e) => set({ trackSlug: e.target.value })}>
+            <select
+              required
+              className="input"
+              value={d.trackSlug}
+              onChange={(e) => {
+                const slug = e.target.value;
+                const trackColor = tracks.find((tr) => tr.slug === slug)?.color;
+                setD((prev) => ({
+                  ...prev,
+                  trackSlug: slug,
+                  custom: {
+                    ...prev.custom,
+                    ...(trackColor ? { color: trackColor } : {}),
+                  },
+                }));
+              }}
+            >
               <option value="">Pick a track…</option>
               {tracks.map((t) => (
                 <option key={t.slug} value={t.slug}>
@@ -449,20 +491,6 @@ export default function JamForm({
                 placeholder={"Upload a photo of a receipt. Gemini reads it and returns merchant, date and total. One row appends to a Google Sheet.\n\nOne receipt at a time. No batch upload, no charts."}
                 value={d.custom.mmv} onChange={(e) => setCustom({ mmv: e.target.value })} />
             </Field>
-            <Field label="Accent colour">
-              <div className="flex gap-2">
-                {G_COLORS.map((c) => (
-                  <button key={c} type="button" onClick={() => setCustom({ color: c })} aria-pressed={d.custom.color === c}
-                    className={[
-                      "h-9 w-9 rounded-full border-2 transition-transform",
-                      d.custom.color === c ? "border-ink scale-110" : "border-line",
-                      c === "blue" ? "bg-gblue" : c === "red" ? "bg-gred" : c === "yellow" ? "bg-gyellow" : "bg-ggreen",
-                    ].join(" ")}
-                    title={c}
-                  />
-                ))}
-              </div>
-            </Field>
             <ListEditor
               label="Think about" hint={`Optional. Up to ${LIMITS.thinkAbout.items} prompts to keep builders on scope.`}
               max={LIMITS.thinkAbout.items} maxLen={LIMITS.thinkAbout.chars}
@@ -483,39 +511,54 @@ export default function JamForm({
               placeholders={["Batch upload a shoebox of receipts", "Monthly summary with charts", "Export to BigQuery"]}
               items={d.custom.polished} onChange={(polished) => setCustom({ polished })} />
 
-            <Field
-              label="Hero image"
-              hint="Optional. Shown at the top of your jam page. PNG, JPEG, WebP or GIF, up to 8 MiB — it uploads when you save."
-            >
-              <div className="space-y-2">
-                {(heroPreview || d.custom.heroImageUrl) && (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={heroPreview || d.custom.heroImageUrl}
-                    alt=""
-                    className="rounded-xl border border-line max-h-48"
-                  />
-                )}
-                <div className="flex items-center gap-3 flex-wrap">
-                  <input
-                    type="file" accept="image/png,image/jpeg,image/webp,image/gif" disabled={busy}
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) pickHero(f); }}
-                    className="text-sm text-ash file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-cloud file:text-ink file:text-sm"
-                  />
-                  {heroFile && <span className="text-xs text-ash">Uploads when you save.</span>}
-                  {(heroPreview || d.custom.heroImageUrl) && (
-                    <button type="button" onClick={clearHero} className="text-xs text-gred hover:underline">
-                      Remove
-                    </button>
-                  )}
-                </div>
-              </div>
-            </Field>
-
             <LinksEditor links={d.custom.links} onChange={(links) => setCustom({ links })}
               note="All optional. If you're bringing an existing codelab or dataset, this is the only section you need." />
           </>
         )}
+
+        <Field label="Accent colour" hint="Sets the banner colour on your jam page and card.">
+          <div className="flex gap-2">
+            {G_COLORS.map((c) => (
+              <button key={c} type="button" onClick={() => setCustom({ color: c })} aria-pressed={d.custom.color === c}
+                className={[
+                  "h-9 w-9 rounded-full border-2 transition-transform",
+                  d.custom.color === c ? "border-ink scale-110" : "border-line",
+                  c === "blue" ? "bg-gblue" : c === "red" ? "bg-gred" : c === "yellow" ? "bg-gyellow" : "bg-ggreen",
+                ].join(" ")}
+                title={c}
+              />
+            ))}
+          </div>
+        </Field>
+
+        <Field
+          label="Hero image"
+          hint="Optional. Shown at the top of your jam page. PNG, JPEG, WebP or GIF, up to 8 MiB — it uploads when you save."
+        >
+          <div className="space-y-2">
+            {(heroPreview || d.custom.heroImageUrl) && (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={heroPreview || d.custom.heroImageUrl}
+                alt=""
+                className="rounded-xl border border-line max-h-48"
+              />
+            )}
+            <div className="flex items-center gap-3 flex-wrap">
+              <input
+                type="file" accept="image/png,image/jpeg,image/webp,image/gif" disabled={busy}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) pickHero(f); }}
+                className="text-sm text-ash file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-cloud file:text-ink file:text-sm"
+              />
+              {heroFile && <span className="text-xs text-ash">Uploads when you save.</span>}
+              {(heroPreview || d.custom.heroImageUrl) && (
+                <button type="button" onClick={clearHero} className="text-xs text-gred hover:underline">
+                  Remove image
+                </button>
+              )}
+            </div>
+          </div>
+        </Field>
 
       </Section>
 

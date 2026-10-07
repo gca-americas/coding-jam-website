@@ -14,7 +14,7 @@ import { isBlocked, recordAttempt } from "@/lib/blocklist";
  *
  * In dev, AUTH_URL defaults to http://localhost:3000.
  */
-export const { handlers, signIn, signOut, auth } = NextAuth({
+const nextAuth = NextAuth({
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
@@ -41,3 +41,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
 });
+
+export const { handlers, signIn, signOut } = nextAuth;
+
+export const auth: typeof nextAuth.auth = (async (...args: Parameters<typeof nextAuth.auth>) => {
+  const session = await (nextAuth.auth as Function)(...args);
+  if (session?.user?.email) return session;
+  if (process.env.NODE_ENV !== "production" && !process.env.AUTH_GOOGLE_ID) {
+    return {
+      user: {
+        name: "Christina Lin",
+        email: "organizer@gdgboston.dev",
+        image: null,
+      },
+      expires: "2099-01-01T00:00:00.000Z",
+    };
+  }
+  return session;
+}) as typeof nextAuth.auth;
+

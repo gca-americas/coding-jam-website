@@ -22,6 +22,7 @@ const tracks: TrackChoice[] = TRACKS.map((t) => ({
   number: t.number,
   project: t.project,
   emoji: t.emoji,
+  color: t.color,
 }));
 
 export default function TryJamPage() {

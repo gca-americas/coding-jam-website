@@ -1,5 +1,35 @@
 export type GColor = "blue" | "red" | "yellow" | "green";
 
+export type RubricCriterion = {
+  name: string;
+  points: string;
+  description: string;
+};
+
+export type RubricPillar = {
+  pillar: string;
+  weight: string;
+  focus: string;
+  criteria: RubricCriterion[];
+};
+
+export type TrackTitledPoint = {
+  title: string;
+  description: string;
+};
+
+export type TrackProgramDetails = {
+  badges: string[];
+  conceptOverview: string[];
+  challenges: string[];
+  purpose: TrackTitledPoint[];
+  impact: TrackTitledPoint[];
+  rubricIntro: string;
+  rubric: RubricPillar[];
+  licensing: string;
+  attestation: string;
+};
+
 export type Track = {
   number: number;
   slug: string;
@@ -31,6 +61,8 @@ export type Track = {
   screenshotUrl: string;
   /** 11-char YouTube video ID. When set, the track page embeds the video and uses its poster as the demo image. */
   youtubeId?: string;
+  /** Rich program overview, impact, rubric, licensing, and attestation for hackathon initiatives. */
+  programDetails?: TrackProgramDetails;
 };
 
 /** Cross-track stack — same on every track, rendered in the sidebar alongside the per-track capability. */
@@ -75,6 +107,188 @@ export const TRACKS: Track[] = [
     videoUrl: "https://youtu.be/9tyZT5qqiCE",
     screenshotUrl: "",
     youtubeId: "9tyZT5qqiCE",
+  },
+  {
+    number: 10,
+    slug: "ai-for-good",
+    project: "AI for Good",
+    tagline: "Multi-chapter regional hacking sprints uniting developers around annually rotating societal challenges.",
+    color: "green",
+    emoji: "🌍",
+    dropIn: true,
+    mmv:
+      "The GDG AI for Good Hackathon is a multi-chapter regional initiative across Google Developer Groups in North America. Local chapters host Fall hacking sprints where developers, designers, students, and domain experts collaborate to build open-source solutions for community-validated problems using Google’s applied AI ecosystem.",
+    aha: "Our prototype solves a real local non-profit problem — and any chapter can deploy it.",
+    thinkAbout: [
+      "Validate the community problem first — ground your solution in real beneficiary personas or direct input from local non-profits and municipal partners.",
+      "Use AI where it is genuinely necessary (multimodal inference, agentic orchestration, embeddings) rather than as a bolt-on gimmick.",
+      "Build explicit guardrails for safety, grounding, privacy, and WCAG-aligned accessibility from the start.",
+      "Design for low-friction handoff, sustainable inference cost efficiency, and Apache 2.0 open-source licensing so community partners can actually run it.",
+    ],
+    tech: [
+      "Agentic orchestration & frameworks",
+      "Multimodal inference & embeddings",
+      "Responsible AI & safety guardrails",
+      "Accessible UI (WCAG-aligned)",
+      "Apache 2.0 open-source deployment",
+    ],
+    polished: [
+      "Direct handoff package for local non-profits or municipal agencies",
+      "Synthetic evaluation datasets under Creative Commons (CC-BY 4.0 or CC0)",
+      "Token & inference cost optimization for resource-constrained orgs",
+      "Full WCAG keyboard navigation, contrast, and screen-reader audit",
+      "Transparent API dependency mapping & one-click deployment guide",
+    ],
+    ifStuck: [],
+    starterRepo: "",
+    codelabUrl: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
+    videoUrl: "",
+    screenshotUrl: "",
+    programDetails: {
+      badges: [
+        "Fall Hacking Sprints",
+        "100-Point Standard Rubric",
+        "Apache 2.0 Open Source",
+      ],
+      conceptOverview: [
+        "The GDG AI for Good Hackathon is a multi-chapter regional initiative across the Google Developer Groups in North America. Rather than running disconnected, one-off hackathons, the initiative unites chapters around an annually rotating societal challenge (such as environmental resilience, digital accessibility, public health informatics, or workforce readiness).",
+        "Local chapters host hacking sprints during the Fall period, where developers, designers, students, and domain experts collaborate to build solutions for community-validated problems using Google’s applied AI ecosystem.",
+      ],
+      challenges: [
+        "Environmental Resilience",
+        "Digital Accessibility",
+        "Public Health Informatics",
+        "Workforce Readiness",
+      ],
+      purpose: [
+        {
+          title: "Bridging Theory and Community Utility",
+          description:
+            "Raise awareness of societal challenges and educate the public on the latest AI tools.",
+        },
+        {
+          title: "Democratizing Applied AI",
+          description:
+            "Provide a concrete on-ramp for participants to master agent frameworks within AI in an applied, ethical problem space.",
+        },
+        {
+          title: "Standardizing Regional Excellence",
+          description:
+            "Establish a shared evaluation baseline across chapters, fostering cross-chapter collaboration, talent discovery, and measurable impact tracking.",
+        },
+      ],
+      impact: [
+        {
+          title: "Catalyst for Localized Civic Tech",
+          description:
+            "Builds a direct bridge between local non-profits, municipal agencies, and GDG talent, delivering actionable open-source repositories to underserved community partners.",
+        },
+        {
+          title: "Regional Talent Pipeline & Cross-Pollination",
+          description:
+            "Connects collegiate tech enthusiasts, career switchers, and senior engineers across urban and suburban tech corridors, showcasing regional talent to industry sponsors and ecosystem partners.",
+        },
+      ],
+      rubricIntro:
+        "This proposed 4-pillar rubric serves as the master scoring guidelines across all chapters and annual iterations to guarantee cross-regional parity.",
+      rubric: [
+        {
+          pillar: "1. Problem Validation & Social Impact",
+          weight: "25 Pts",
+          focus: "Depth of community relevance, beneficiary focus, and quantifiable real-world value.",
+          criteria: [
+            {
+              name: "Problem Definition",
+              points: "10 pts",
+              description: "Clearly addresses the annual topic in an authentic, well-scoped way.",
+            },
+            {
+              name: "Impact Multiplier",
+              points: "10 pts",
+              description: "Demonstrates tangible, measurable benefit to the target audience or community sector.",
+            },
+            {
+              name: "Stakeholder Empathy",
+              points: "5 pts",
+              description: "Solution reflects direct input or realistic personas representing affected end users.",
+            },
+          ],
+        },
+        {
+          pillar: "2. Technical Innovation & AI Architecture",
+          weight: "25 Pts",
+          focus: "Rigor, elegance, and utility of the underlying solution.",
+          criteria: [
+            {
+              name: "AI Integration & Necessity",
+              points: "15 pts",
+              description:
+                "Meaningful use of AI (e.g., multimodal inference, agentic orchestration, embeddings) where AI is genuinely necessary, not a gimmick.",
+            },
+            {
+              name: "Architectural Soundness",
+              points: "10 pts",
+              description:
+                "Stable full-stack execution, robust data pipeline handling, clean code structure, and functional working prototype.",
+            },
+          ],
+        },
+        {
+          pillar: "3. Responsible AI, Ethics & Accessibility",
+          weight: "25 Pts",
+          focus: "Safety, equity, bias prevention, transparency, and inclusive design principles.",
+          criteria: [
+            {
+              name: "Safety & Grounding",
+              points: "10 pts",
+              description:
+                "Explicit guardrails against hallucinations, adversarial inputs, bias, and harmful content generation.",
+            },
+            {
+              name: "Privacy & Data Ethics",
+              points: "8 pts",
+              description:
+                "Responsible handling of training data, user confidentiality, and minimal data-collection footprints.",
+            },
+            {
+              name: "Inclusive Design",
+              points: "7 pts",
+              description:
+                "Adherence to accessibility standards (WCAG-aligned UI, keyboard navigation, readable contrasts, screen-reader compatibility).",
+            },
+          ],
+        },
+        {
+          pillar: "4. Feasibility, Scalability & Sustainability",
+          weight: "25 Pts",
+          focus: "Viability of handoff, operational cost management, and long-term ecosystem maintenance.",
+          criteria: [
+            {
+              name: "Deployment Viability",
+              points: "10 pts",
+              description:
+                "Low-friction deployment path for resource-constrained community organizations or non-profits.",
+            },
+            {
+              name: "Inference Cost Efficiency",
+              points: "8 pts",
+              description:
+                "Architecture balances token consumption, model sizing, and operational hosting costs sustainably.",
+            },
+            {
+              name: "Documentation & Maintenance",
+              points: "7 pts",
+              description:
+                "Clear setup guides, transparent API dependency mappings, and open-source documentation.",
+            },
+          ],
+        },
+      ],
+      licensing:
+        "Participants retain 100% ownership of all software, models, and intellectual property created during the event; neither Google Developer Groups (GDG), Google LLC, nor host institutions claim any equity or commercial rights in your work. To ensure community and non-profit partners can deploy, maintain, and scale these civic solutions without legal barriers or licensing friction, all builds submitted to the GDG AI for Good track must be released publicly under the Apache License 2.0, with accompanying project documentation and synthetic evaluation datasets shared under Creative Commons (CC-BY 4.0 or CC0).",
+      attestation:
+        "By submitting to codingjam.dev, teams warrant that their build is original work, free of unauthorized third-party or employer-owned proprietary trade secrets, contains no unscrubbed personally identifiable information (PII), and adheres strictly to upstream AI foundation model terms of service. Entrants grant GDG and local organizing chapters a non-exclusive, perpetual, royalty-free license solely to index, demonstrate, screenshot, and publicize the project across regional leaderboards, promotional media, and DevFest showcases.",
+    },
   },
   {
     number: 2,

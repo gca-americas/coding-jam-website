@@ -18,7 +18,7 @@ import { decodeSharedJam, encodeSharedJam, MAX_FRAGMENT, type SharedJam } from "
 import TopicBody from "@/components/TopicBody";
 import Timeline from "@/components/Timeline";
 
-export type TrackChoice = { slug: string; number: number; project: string; emoji: string };
+export type TrackChoice = { slug: string; number: number; project: string; emoji: string; color?: string };
 
 type CustomDraft = {
   title: string; tagline: string; mmv: string;
@@ -49,7 +49,13 @@ const KIND_TABS: Array<{ value: TopicKind; label: string }> = [
 ];
 
 function topicFrom(d: Draft): Topic {
-  if (d.kind === "track") return { kind: "track", trackSlug: d.trackSlug };
+  if (d.kind === "track") {
+    return {
+      kind: "track",
+      trackSlug: d.trackSlug,
+      color: d.custom.color as CustomDraft["color"] as never,
+    };
+  }
   return {
     kind: "custom",
     title: d.custom.title, tagline: d.custom.tagline,
@@ -63,7 +69,7 @@ function topicFrom(d: Draft): Topic {
   };
 }
 
-function draftFrom(jam: SharedJam): Draft {
+function draftFrom(jam: SharedJam, tracks: TrackChoice[]): Draft {
   const d: Draft = {
     ...EMPTY,
     title: jam.title,
@@ -76,7 +82,11 @@ function draftFrom(jam: SharedJam): Draft {
     kind: jam.topic.kind,
   };
   const t = jam.topic;
-  if (t.kind === "track") d.trackSlug = t.trackSlug;
+  if (t.kind === "track") {
+    d.trackSlug = t.trackSlug;
+    const trackDefaultColor = tracks.find((tr) => tr.slug === t.trackSlug)?.color ?? "blue";
+    d.custom = { ...d.custom, color: t.color ?? trackDefaultColor };
+  }
   if (t.kind === "custom") {
     d.custom = {
       title: t.title, tagline: t.tagline, mmv: t.mmv ?? "",
@@ -109,9 +119,9 @@ export default function TryJamBuilder({ tracks }: { tracks: TrackChoice[] }) {
       setMode("edit");
       return;
     }
-    setD(draftFrom(decoded.jam));
+    setD(draftFrom(decoded.jam, tracks));
     setMode("preview");
-  }, []);
+  }, [tracks]);
 
   const set = (patch: Partial<Draft>) => setD((p) => ({ ...p, ...patch }));
   const setCustom = (patch: Partial<CustomDraft>) => setD((p) => ({ ...p, custom: { ...p.custom, ...patch } }));
@@ -293,7 +303,22 @@ export default function TryJamBuilder({ tracks }: { tracks: TrackChoice[] }) {
 
           {d.kind === "track" && (
             <Field label="Which track?" hint="Track 09 is the open one — no set topic, everyone brings their own idea.">
-              <select className="input" value={d.trackSlug} onChange={(e) => set({ trackSlug: e.target.value })}>
+              <select
+                className="input"
+                value={d.trackSlug}
+                onChange={(e) => {
+                  const slug = e.target.value;
+                  const trackColor = tracks.find((tr) => tr.slug === slug)?.color;
+                  setD((prev) => ({
+                    ...prev,
+                    trackSlug: slug,
+                    custom: {
+                      ...prev.custom,
+                      ...(trackColor ? { color: trackColor } : {}),
+                    },
+                  }));
+                }}
+              >
                 <option value="">Pick a track…</option>
                 {tracks.map((t) => (
                   <option key={t.slug} value={t.slug}>
@@ -336,20 +361,6 @@ export default function TryJamBuilder({ tracks }: { tracks: TrackChoice[] }) {
                 <textarea rows={4} className="input" maxLength={LIMITS.mmv}
                   value={d.custom.mmv} onChange={(e) => setCustom({ mmv: e.target.value })} />
               </Field>
-              <Field label="Accent colour">
-                <div className="flex gap-2">
-                  {G_COLORS.map((c) => (
-                    <button key={c} type="button" onClick={() => setCustom({ color: c })} aria-pressed={d.custom.color === c}
-                      title={c}
-                      className={[
-                        "h-9 w-9 rounded-full border-2 transition-transform",
-                        d.custom.color === c ? "border-ink scale-110" : "border-line",
-                        c === "blue" ? "bg-gblue" : c === "red" ? "bg-gred" : c === "yellow" ? "bg-gyellow" : "bg-ggreen",
-                      ].join(" ")}
-                    />
-                  ))}
-                </div>
-              </Field>
               <ListEditor label="Think about" items={d.custom.thinkAbout} max={LIMITS.thinkAbout.items}
                 maxLen={LIMITS.thinkAbout.chars} placeholders={["One playlist, not three."]}
                 onChange={(thinkAbout) => setCustom({ thinkAbout })} />
@@ -375,6 +386,21 @@ export default function TryJamBuilder({ tracks }: { tracks: TrackChoice[] }) {
               </div>
             </>
           )}
+
+          <Field label="Accent colour">
+            <div className="flex gap-2">
+              {G_COLORS.map((c) => (
+                <button key={c} type="button" onClick={() => setCustom({ color: c })} aria-pressed={d.custom.color === c}
+                  title={c}
+                  className={[
+                    "h-9 w-9 rounded-full border-2 transition-transform",
+                    d.custom.color === c ? "border-ink scale-110" : "border-line",
+                    c === "blue" ? "bg-gblue" : c === "red" ? "bg-gred" : c === "yellow" ? "bg-gyellow" : "bg-ggreen",
+                  ].join(" ")}
+                />
+              ))}
+            </div>
+          </Field>
 
         </Card>
 

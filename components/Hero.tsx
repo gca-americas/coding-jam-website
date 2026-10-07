@@ -2,11 +2,11 @@ import Link from "next/link";
 import { TRACKS, colorClasses, trackLabel } from "@/lib/tracks";
 
 /**
- * Track 09 is the "bring your own idea" option rather than a ready-made topic,
- * so it's neither a tile nor part of the count — that keeps the grid a clean
- * 4×2 and the chip honest about how many topics are actually written for you.
+ * Tracks 01–08 form the 4×2 ready-made codelab grid; Track 10 (GDG AI for Good
+ * Hackathon) sits right below as a full-width featured regional initiative bar.
  */
-const READY_MADE = TRACKS.filter((t) => t.number !== 9);
+const READY_MADE = TRACKS.filter((t) => t.number <= 8);
+const AI_FOR_GOOD = TRACKS.find((t) => t.slug === "ai-for-good");
 
 export default function Hero() {
   return (
@@ -51,6 +51,27 @@ export default function Hero() {
 
           {/* 4×2 tile grid — fast-access navigator, doubles as visual balance for the headline. */}
           <div className="lg:col-span-5">
+            {AI_FOR_GOOD && (
+              <Link
+                href={`/tracks/${AI_FOR_GOOD.slug}`}
+                className="group mb-3 relative rounded-2xl bg-ggreen/10 border border-ggreen/30 hover:border-ggreen hover:shadow-lift transition-all hover:-translate-y-0.5 p-3.5 flex items-center justify-between gap-3 overflow-hidden"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-3xl leading-none shrink-0 group-hover:scale-110 transition-transform" aria-hidden>
+                    {AI_FOR_GOOD.emoji}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-ggreen">
+                      Track {trackLabel(AI_FOR_GOOD.number)}
+                    </div>
+                    <div className="font-display font-semibold text-sm text-ink truncate">
+                      {AI_FOR_GOOD.project}
+                    </div>
+                  </div>
+                </div>
+                <span className="text-xs font-semibold text-ggreen shrink-0">Explore →</span>
+              </Link>
+            )}
             <div className="grid grid-cols-4 gap-3">
               {READY_MADE.map((t) => {
                 const c = colorClasses[t.color];

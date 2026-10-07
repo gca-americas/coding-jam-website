@@ -11,4 +11,5 @@ export const trackOptions: TrackOption[] = TRACKS.map((t) => ({
   project: t.project,
   tagline: t.tagline,
   emoji: t.emoji,
+  color: t.color,
 }));
