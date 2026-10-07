@@ -58,9 +58,10 @@ export async function POST(req: Request) {
   }
 
   let trackNumber = Number(body.trackNumber);
-  // 0 = legacy "I built my own" option; 1–10 are the built-in tracks.
-  if (!Number.isInteger(trackNumber) || trackNumber < 0 || trackNumber > 10) {
-    return NextResponse.json({ error: "trackNumber must be 0–10" }, { status: 400 });
+  // 0 = legacy "I built my own" option; 1–8 are the official tracks; 9 is the
+  // "build your own idea" off-menu track.
+  if (!Number.isInteger(trackNumber) || trackNumber < 0 || trackNumber > 9) {
+    return NextResponse.json({ error: "trackNumber must be 0–9" }, { status: 400 });
   }
 
   /*
@@ -99,7 +100,7 @@ export async function POST(req: Request) {
     // The jam decides the track, not the form. A jam on a built-in track keeps
     // that track's number so existing per-track counts stay correct; a custom
     // or open topic lands on 0, which renders as "I built my own".
-    trackNumber = view.track ? view.track.number : 0;
+    trackNumber = view.track?.number ?? 0;
   }
 
   const safeUrl = (v: unknown): string | undefined => {

@@ -1,20 +1,23 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useT } from "@/lib/i18n/client";
+
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import ChapterPicker, { type ChapterType } from "@/components/ChapterPicker";
+import { parseChapter } from "@/lib/chapters";
 import { COUNTRIES, DEFAULT_COUNTRY } from "@/lib/countries";
 import { G_COLORS, LIMITS, LINK_FIELDS, type TopicKind, type TopicLinks } from "@/lib/topic";
-import { TOPIC_EXAMPLES } from "@/lib/topic-examples";
+import type { GColor } from "@/lib/tracks";
 import type { Jam } from "@/lib/jams";
 
 export type TrackOption = {
   slug: string;
-  number: number;
+  number?: number;
   project: string;
   tagline: string;
   emoji: string;
-  color?: string;
+  color?: GColor;
 };
 
 /* Per-kind state is kept side by side rather than in one shared bag, so
@@ -22,7 +25,7 @@ export type TrackOption = {
 type CustomDraft = {
   title: string; tagline: string; mmv: string;
   thinkAbout: string[]; tech: string[]; polished: string[];
-  color: string; emoji: string; heroImageUrl: string; links: TopicLinks;
+  color: GColor; emoji: string; heroImageUrl: string; links: TopicLinks;
 };
 type Draft = {
   slug: string;
@@ -40,8 +43,8 @@ type Draft = {
 };
 
 const KIND_TABS: Array<{ value: TopicKind; label: string; blurb: string }> = [
-  { value: "track", label: "Pick a track", blurb: "Use one of the ten built-in jams. Nothing to write — your page pulls the brief, codelab, starter repo and demo video. Running an open jam with no set topic? That's Track 09. Running a civic sprint? Pick Track 10." },
-  { value: "custom", label: "Your own topic", blurb: "Bring your own codelab or dataset, write a topic from scratch, or both. Only the title and tagline are required — fill in as much of the rest as you want." },
+  { value: "track", label: "jfm.kind.track", blurb: "jfm.kind.track.blurb" },
+  { value: "custom", label: "jfm.kind.custom", blurb: "jfm.kind.custom.blurb" },
 ];
 
 function emptyDraft(defaults: { chapterType: ChapterType; chapterName: string; country: string }): Draft {
@@ -63,19 +66,11 @@ function emptyDraft(defaults: { chapterType: ChapterType; chapterName: string; c
  * URL, its date, and its published state. So "run it again" lands on an unlisted
  * draft you set a new date on, never a second live page duplicating the first.
  */
-function draftForCopy(
-  jam: Jam,
-  defaults: Parameters<typeof emptyDraft>[0],
-  tracks: TrackOption[],
-): Draft {
-  return { ...draftFromJam(jam, defaults, tracks), slug: "", eventDate: "", status: "draft" };
+function draftForCopy(jam: Jam, defaults: Parameters<typeof emptyDraft>[0]): Draft {
+  return { ...draftFromJam(jam, defaults), slug: "", eventDate: "", status: "draft" };
 }
 
-function draftFromJam(
-  jam: Jam,
-  defaults: Parameters<typeof emptyDraft>[0],
-  tracks: TrackOption[],
-): Draft {
+function draftFromJam(jam: Jam, defaults: Parameters<typeof emptyDraft>[0]): Draft {
   const base = emptyDraft(defaults);
   const d: Draft = {
     ...base,
@@ -93,12 +88,8 @@ function draftFromJam(
   const t = jam.topic;
   if (t.kind === "track") {
     d.trackSlug = t.trackSlug;
-    const trackDefaultColor = tracks.find((tr) => tr.slug === t.trackSlug)?.color ?? "blue";
-    d.custom = {
-      ...d.custom,
-      color: t.color ?? trackDefaultColor,
-      heroImageUrl: t.heroImageUrl ?? "",
-    };
+    if (t.color) d.custom.color = t.color;
+    if (t.heroImageUrl) d.custom.heroImageUrl = t.heroImageUrl;
   }
   if (t.kind === "custom") {
     d.custom = {
@@ -120,7 +111,7 @@ function topicPayload(d: Draft, heroImageUrl = d.custom.heroImageUrl) {
         kind: "track",
         trackSlug: d.trackSlug,
         color: d.custom.color,
-        heroImageUrl,
+        ...(heroImageUrl ? { heroImageUrl } : {}),
       };
     case "custom":
       return {
@@ -145,6 +136,7 @@ export default function JamForm({
   tracks,
   defaults,
   initialError,
+  prefill,
 }: {
   mode: "create" | "edit";
   jam?: Jam;
@@ -154,14 +146,58 @@ export default function JamForm({
   defaults: { chapterType: ChapterType; chapterName: string; country: string };
   /** Carried over from a create where the jam saved but its image didn't. */
   initialError?: string;
+  /** Values proposed by the setup assistant. Merged in whenever a new one arrives. */
+  prefill?: Record<string, string | undefined>;
 }) {
   const router = useRouter();
-  const [d, setD] = useState<Draft>(() =>
-    jam ? draftFromJam(jam, defaults, tracks)
-      : copyFrom ? draftForCopy(copyFrom, defaults, tracks)
-      : emptyDraft(defaults),
-  );
+  const [d, setD] = useState<Draft>(() => {
+    if (jam) return draftFromJam(jam, defaults);
+    if (copyFrom) return draftForCopy(copyFrom, defaults);
+    const initial = emptyDraft(defaults);
+    if (tracks.length > 0 && tracks[0].color) {
+      initial.custom.color = tracks[0].color;
+    }
+    return initial;
+  });
+
+  /* The assistant proposes values; the organizer still reviews and submits.
+     Only fields it actually returned are touched, so anything already typed
+     here survives. */
+  useEffect(() => {
+    if (!prefill) return;
+    setD((p) => {
+      const next: Draft = { ...p };
+      const set = (k: keyof Draft, v?: string) => {
+        if (v !== undefined && v !== "") (next as Record<string, unknown>)[k] = v;
+      };
+      // No slug: the store assigns a five-digit URL on save.
+      set("title", prefill.title);
+      set("country", prefill.country);
+      set("eventDate", prefill.eventDate);
+      set("locationNote", prefill.locationNote);
+      set("rsvpUrl", prefill.rsvpUrl);
+      if (prefill.chapter) {
+        const { type, name } = parseChapter(prefill.chapter);
+        next.chapterType = type;
+        next.chapterName = name;
+      }
+      if (prefill.trackSlug) {
+        next.kind = "track";
+        next.trackSlug = prefill.trackSlug;
+      } else if (prefill.customTitle || prefill.customTagline) {
+        next.kind = "custom";
+        next.custom = {
+          ...p.custom,
+          title: prefill.customTitle ?? p.custom.title,
+          tagline: prefill.customTagline ?? p.custom.tagline,
+          mmv: prefill.customMmv ?? p.custom.mmv,
+        };
+      }
+      return next;
+    });
+  }, [prefill]);
   const [busy, setBusy] = useState(false);
+  const t = useT();
   const [error, setError] = useState<string | null>(initialError ?? null);
   const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -177,18 +213,6 @@ export default function JamForm({
   const set = (patch: Partial<Draft>) => setD((prev) => ({ ...prev, ...patch }));
   const setCustom = (patch: Partial<CustomDraft>) => setD((p) => ({ ...p, custom: { ...p.custom, ...patch } }));
 
-  /** Loads an example over the custom fields, keeping any links already typed. */
-  function loadExample(id: string) {
-    const ex = TOPIC_EXAMPLES.find((e) => e.id === id);
-    if (!ex) return;
-    const filled = d.custom.title || d.custom.tagline || d.custom.mmv;
-    if (filled && !window.confirm(`Replace what you've written with the "${ex.title}" example?`)) return;
-    setCustom({
-      title: ex.title, tagline: ex.tagline, mmv: ex.mmv,
-      thinkAbout: [...ex.thinkAbout], tech: [...ex.tech], polished: [...ex.polished],
-      color: ex.color, emoji: ex.emoji,
-    });
-  }
 
   /** Uploads the held image into this jam's folder and returns its public URL. */
   async function uploadHero(slug: string, file: File): Promise<string> {
@@ -197,8 +221,8 @@ export default function JamForm({
     body.append("kind", "jam");
     body.append("jam", slug);
     const res = await fetch("/api/upload", { method: "POST", body });
-    const j = await res.json().catch(() => ({ error: "Upload failed." }));
-    if (!res.ok) throw new Error(j.error || "Upload failed.");
+    const j = await res.json().catch(() => ({ error: t("sf.err.uploadFailed") }));
+    if (!res.ok) throw new Error(j.error || t("sf.err.uploadFailed"));
     return j.url as string;
   }
 
@@ -222,6 +246,7 @@ export default function JamForm({
 
     try {
       let heroUrl = d.custom.heroImageUrl;
+      // Both track and custom jams support hero image uploads
       const wantsUpload = Boolean(heroFile);
 
       // Editing: the jam already owns a folder, so the image can go up first
@@ -239,8 +264,8 @@ export default function JamForm({
         },
       );
       if (!res.ok) {
-        const j = await res.json().catch(() => ({ error: "Save failed." }));
-        throw new Error(j.error || "Save failed.");
+        const j = await res.json().catch(() => ({ error: t("jfm.err.save") }));
+        throw new Error(j.error || t("jfm.err.save"));
       }
 
       if (mode === "create") {
@@ -262,9 +287,9 @@ export default function JamForm({
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ topic: topicPayload(d, url) }),
             });
-            if (!patch.ok) throw new Error("Could not attach the image.");
+            if (!patch.ok) throw new Error(t("jfm.err.image"));
           } catch (imgErr) {
-            const why = imgErr instanceof Error ? imgErr.message : "Upload failed.";
+            const why = imgErr instanceof Error ? imgErr.message : t("sf.err.uploadFailed");
             router.push(`/organizer/jams/${slug}/edit?imageError=${encodeURIComponent(why)}`);
             return;
           }
@@ -280,7 +305,7 @@ export default function JamForm({
       setSaved(true);
       startTransition(() => router.refresh());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed.");
+      setError(err instanceof Error ? err.message : t("jfm.err.save"));
     } finally {
       setBusy(false);
     }
@@ -317,12 +342,12 @@ export default function JamForm({
     try {
       const res = await fetch(`/api/jams/${encodeURIComponent(d.slug)}`, { method: "DELETE" });
       if (!res.ok) {
-        const j = await res.json().catch(() => ({ error: "Delete failed." }));
-        throw new Error(j.error || "Delete failed.");
+        const j = await res.json().catch(() => ({ error: t("jfm.err.delete") }));
+        throw new Error(j.error || t("jfm.err.delete"));
       }
       router.push("/organizer/jams");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed.");
+      setError(err instanceof Error ? err.message : t("jfm.err.delete"));
       setBusy(false);
     }
   }
@@ -334,18 +359,18 @@ export default function JamForm({
       )}
       {saved && !error && (
         <div className="rounded-lg bg-ggreen/10 text-ggreen border border-ggreen/30 p-3 text-sm">
-          Saved.{" "}
+          {t("sf.saved")}{" "}
           {d.status === "published" ? (
-            <a href={`/jam/${d.slug}`} className="underline font-medium">View the live page →</a>
+            <a href={`/jam/${d.slug}`} className="underline font-medium">{t("jfm.viewLive")}</a>
           ) : (
-            <>Still a draft — set it to Published when you&rsquo;re ready to share the link.</>
+            <>{t("jfm.stillDraft")}</>
           )}
         </div>
       )}
 
       {/* ── The event ── */}
-      <Section title="The event" eyebrow="Step 1">
-        <Field label="Jam name" hint="What you'd put on the meetup listing.">
+      <Section title={t("jfm.sec.event")} eyebrow={t("sf.step1")}>
+        <Field label={t("jfm.name")} hint={t("jfm.name.hint")}>
           <input
             required maxLength={90} className="input" placeholder="GDG Seattle Coding Jam — Week 3"
             value={d.title} onChange={(e) => set({ title: e.target.value })}
@@ -353,9 +378,7 @@ export default function JamForm({
         </Field>
         {/* The URL is assigned, not chosen — on create there's nothing to show
             yet, so this only appears once the jam has one. */}
-        <Field label="Page URL" hint={mode === "create"
-          ? "Assigned when you save — a short link you can read out to the room."
-          : "Short enough to put on a slide. This is the link to share."}>
+        <Field label={t("jfm.url")} hint={mode === "create" ? t("jfm.url.hintNew") : t("jfm.url.hint")}>
           {mode === "create" ? (
             <div className="input flex items-center gap-1 text-ash bg-cloud/50 font-mono">
               <span>codingjam.dev/jam/</span>
@@ -371,75 +394,72 @@ export default function JamForm({
             </div>
           )}
         </Field>
-        <Field label="Chapter">
+        <Field label={t("jam.detail.chapter")}>
           <ChapterPicker
             type={d.chapterType} name={d.chapterName}
             onChange={(next) => set({ chapterType: next.type, chapterName: next.name })}
           />
         </Field>
         <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Country">
+          <Field label={t("sf.country")}>
             <select required className="input" value={d.country} onChange={(e) => set({ country: e.target.value })}>
               {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </Field>
-          <Field label="Event date" hint="Optional — leave blank if you haven't picked one.">
+          <Field label={t("jfm.date")} hint={t("jfm.date.hint")}>
             <input type="date" className="input" value={d.eventDate} onChange={(e) => set({ eventDate: e.target.value })} />
           </Field>
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Where / when" hint="Optional. e.g. “6:30pm · Room 401” or “Online”.">
+          <Field label={t("jfm.where")} hint={t("jfm.where.hint")}>
             <input maxLength={120} className="input" value={d.locationNote} onChange={(e) => set({ locationNote: e.target.value })} />
           </Field>
-          <Field label="RSVP link" hint="Optional. Your Meetup or Luma page.">
+          <Field label={t("jfm.rsvp")} hint={t("jfm.rsvp.hint")}>
             <input type="url" className="input" placeholder="https://…" value={d.rsvpUrl} onChange={(e) => set({ rsvpUrl: e.target.value })} />
           </Field>
         </div>
       </Section>
 
       {/* ── The topic ── */}
-      <Section title="This week's topic" eyebrow="Step 2">
+      <Section title={t("jfm.sec.topic")} eyebrow={t("sf.step2")}>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
-          {KIND_TABS.map((t) => {
-            const active = t.value === d.kind;
+          {KIND_TABS.map((tab) => {
+            const active = tab.value === d.kind;
             return (
               <button
-                key={t.value} type="button" onClick={() => set({ kind: t.value })} aria-pressed={active}
+                key={tab.value} type="button" onClick={() => set({ kind: tab.value })} aria-pressed={active}
                 className={[
                   "px-3 py-2 rounded-xl border text-sm font-medium transition-colors text-left",
                   active ? "border-gblue bg-gblue/10 text-gblue" : "border-line bg-white text-ash hover:border-gblue/40 hover:text-ink",
                 ].join(" ")}
               >
-                {t.label}
+                {t(tab.label)}
               </button>
             );
           })}
         </div>
-        <p className="hint">{KIND_TABS.find((t) => t.value === d.kind)?.blurb}</p>
+        <p className="hint">{t(KIND_TABS.find((tab) => tab.value === d.kind)?.blurb ?? "")}</p>
 
         {d.kind === "track" && (
-          <Field label="Which track?" hint="Your jam page shows this track's brief, codelab and demo. Track 09 is the open one — no set topic, everyone brings their own idea.">
+          <Field label={t("jfm.whichTopic")} hint={t("jfm.whichTopic.hint")}>
             <select
               required
               className="input"
               value={d.trackSlug}
               onChange={(e) => {
                 const slug = e.target.value;
-                const trackColor = tracks.find((tr) => tr.slug === slug)?.color;
-                setD((prev) => ({
-                  ...prev,
+                const tr = tracks.find((x) => x.slug === slug);
+                set({
                   trackSlug: slug,
-                  custom: {
-                    ...prev.custom,
-                    ...(trackColor ? { color: trackColor } : {}),
-                  },
-                }));
+                  ...(tr && tr.color ? { custom: { ...d.custom, color: tr.color } } : {}),
+                });
               }}
             >
-              <option value="">Pick a track…</option>
+              <option value="">{t("jfm.pickTopic")}</option>
               {tracks.map((t) => (
                 <option key={t.slug} value={t.slug}>
-                  {t.emoji} Track {String(t.number).padStart(2, "0")} — {t.project}
+                  {t.emoji}{" "}
+                  {t.project}
                 </option>
               ))}
             </select>
@@ -448,51 +468,30 @@ export default function JamForm({
 
         {d.kind === "custom" && (
           <>
-            <div className="rounded-xl border border-line bg-cloud/60 p-4">
-              <div className="text-sm font-medium text-ink">Start from an example</div>
-              <p className="hint">
-                Four topics built on different corners of Google&rsquo;s stack. Load one and edit it —
-                or ignore these entirely and write your own.
-              </p>
-              <div className="mt-3 grid sm:grid-cols-2 gap-2">
-                {TOPIC_EXAMPLES.map((ex) => (
-                  <button
-                    key={ex.id} type="button" onClick={() => loadExample(ex.id)}
-                    className="text-left px-3 py-2 rounded-xl border border-line bg-white hover:border-gblue/40 transition-colors"
-                  >
-                    <div className="text-sm font-medium text-ink">
-                      {ex.emoji} {ex.title}
-                    </div>
-                    <div className="text-xs text-ash mt-0.5">{ex.label} · {ex.blurb}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div className="grid sm:grid-cols-[5rem,1fr] gap-4">
-              <Field label="Emoji">
+              <Field label={t("jfm.emoji")}>
                 <input maxLength={8} className="input text-center text-xl" value={d.custom.emoji}
                   onChange={(e) => setCustom({ emoji: e.target.value })} />
               </Field>
-              <Field label="Topic title">
+              <Field label={t("jfm.topicTitle")}>
                 <input required maxLength={LIMITS.title} className="input" placeholder="Receipt Whisperer"
                   value={d.custom.title} onChange={(e) => setCustom({ title: e.target.value })} />
               </Field>
             </div>
-            <Field label="Tagline" hint="One line the room can read off the projector.">
+            <Field label={t("jfm.tagline")} hint={t("jfm.tagline.hint")}>
               <input required maxLength={LIMITS.tagline} className="input" placeholder="Snap a receipt → a tidy row in your spreadsheet."
                 value={d.custom.tagline} onChange={(e) => setCustom({ tagline: e.target.value })} />
             </Field>
             <Field
-              label="What ships today"
-              hint="Optional — but it's the field that keeps a room on scope. The smallest version that still works, and what you're explicitly not building."
+              label={t("tb.ships.eyebrow")}
+              hint={t("jfm.mmv.hint")}
             >
               <textarea rows={5} maxLength={LIMITS.mmv} className="input"
                 placeholder={"Upload a photo of a receipt. Gemini reads it and returns merchant, date and total. One row appends to a Google Sheet.\n\nOne receipt at a time. No batch upload, no charts."}
                 value={d.custom.mmv} onChange={(e) => setCustom({ mmv: e.target.value })} />
             </Field>
             <ListEditor
-              label="Think about" hint={`Optional. Up to ${LIMITS.thinkAbout.items} prompts to keep builders on scope.`}
+              label={t("jfm.thinkAbout")} hint={t("jfm.thinkAbout.hint").replace("{n}", String(LIMITS.thinkAbout.items))}
               max={LIMITS.thinkAbout.items} maxLen={LIMITS.thinkAbout.chars}
               placeholders={[
                 "Ask Gemini for JSON and give it the exact shape you want.",
@@ -501,22 +500,26 @@ export default function JamForm({
               ]}
               items={d.custom.thinkAbout} onChange={(thinkAbout) => setCustom({ thinkAbout })} />
             <ListEditor
-              label="Tech" hint={`Optional. Up to ${LIMITS.tech.items} short labels — what they'll actually touch.`}
+              label={t("jfm.tech")} hint={t("jfm.tech.hint").replace("{n}", String(LIMITS.tech.items))}
               max={LIMITS.tech.items} maxLen={LIMITS.tech.chars}
               placeholders={["Gemini API", "Firestore", "Cloud Run", "Maps JavaScript API", "Imagen on Vertex AI"]}
               items={d.custom.tech} onChange={(tech) => setCustom({ tech })} />
             <ListEditor
-              label="The polished version" hint={`Optional. Up to ${LIMITS.polished.items} ideas for the at-home build.`}
+              label={t("tb.polished.eyebrow")} hint={t("jfm.polished.hint").replace("{n}", String(LIMITS.polished.items))}
               max={LIMITS.polished.items} maxLen={LIMITS.polished.chars}
-              placeholders={["Batch upload a shoebox of receipts", "Monthly summary with charts", "Export to BigQuery"]}
+              placeholders={[
+                "Batch upload a shoebox of receipts",
+                "Monthly summary with charts",
+                "Export to BigQuery",
+              ]}
               items={d.custom.polished} onChange={(polished) => setCustom({ polished })} />
 
             <LinksEditor links={d.custom.links} onChange={(links) => setCustom({ links })}
-              note="All optional. If you're bringing an existing codelab or dataset, this is the only section you need." />
+              note={t("jfm.links.note")} />
           </>
         )}
 
-        <Field label="Accent colour" hint="Sets the banner colour on your jam page and card.">
+        <Field label={t("jfm.accent")}>
           <div className="flex gap-2">
             {G_COLORS.map((c) => (
               <button key={c} type="button" onClick={() => setCustom({ color: c })} aria-pressed={d.custom.color === c}
@@ -532,8 +535,8 @@ export default function JamForm({
         </Field>
 
         <Field
-          label="Hero image"
-          hint="Optional. Shown at the top of your jam page. PNG, JPEG, WebP or GIF, up to 8 MiB — it uploads when you save."
+          label={t("jfm.hero")}
+          hint={t("jfm.hero.hint")}
         >
           <div className="space-y-2">
             {(heroPreview || d.custom.heroImageUrl) && (
@@ -550,10 +553,10 @@ export default function JamForm({
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) pickHero(f); }}
                 className="text-sm text-ash file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-cloud file:text-ink file:text-sm"
               />
-              {heroFile && <span className="text-xs text-ash">Uploads when you save.</span>}
+              {heroFile && <span className="text-xs text-ash">{t("jfm.uploadsOnSave")}</span>}
               {(heroPreview || d.custom.heroImageUrl) && (
                 <button type="button" onClick={clearHero} className="text-xs text-gred hover:underline">
-                  Remove image
+                  {t("sf.remove")}
                 </button>
               )}
             </div>
@@ -563,25 +566,25 @@ export default function JamForm({
       </Section>
 
       {/* ── Publish ── */}
-      <Section title="Visibility" eyebrow="Step 3">
-        <Field label="Status" hint="Drafts are only visible to you. Published jams appear on /jams and anyone with the link can see them.">
+      <Section title={t("jfm.sec.visibility")} eyebrow={t("sf.step3")}>
+        <Field label={t("jfm.status")} hint={t("jfm.status.hint")}>
           <select className="input sm:max-w-xs" value={d.status} onChange={(e) => set({ status: e.target.value as Draft["status"] })}>
-            <option value="draft">Draft — only me</option>
-            <option value="published">Published — live</option>
-            <option value="archived">Archived — hidden, kept for the record</option>
+            <option value="draft">{t("jfm.status.draft")}</option>
+            <option value="published">{t("jfm.status.published")}</option>
+            <option value="archived">{t("jfm.status.archived")}</option>
           </select>
         </Field>
       </Section>
 
       <div className="flex items-center gap-3 flex-wrap">
         <button type="submit" disabled={busy || pending} className="btn-google disabled:opacity-60">
-          {busy ? "Saving…" : mode === "create" ? "Create jam" : "Save changes"}
+          {busy ? t("sf.saving") : mode === "create" ? t("jfm.createJam") : t("sf.saveChanges")}
         </button>
         {mode === "edit" && (
           <>
-            <a href={`/jam/${d.slug}`} className="btn-ghost" target="_blank" rel="noreferrer">Preview page ↗</a>
+            <a href={`/jam/${d.slug}`} className="btn-ghost" target="_blank" rel="noreferrer">{t("jfm.previewPage")}</a>
             <button type="button" onClick={onDelete} disabled={busy} className="ml-auto text-sm text-gred hover:underline disabled:opacity-60">
-              Delete this jam
+              {t("jfm.deleteJam")}
             </button>
           </>
         )}
@@ -621,6 +624,7 @@ function ListEditor({
   placeholders?: string[];
   onChange: (next: string[]) => void;
 }) {
+  const t = useT();
   return (
     <Field label={label} hint={hint}>
       <div className="space-y-2">
@@ -632,7 +636,7 @@ function ListEditor({
               onChange={(e) => { const next = [...items]; next[i] = e.target.value; onChange(next); }}
             />
             <button
-              type="button" aria-label={`Remove ${label} entry ${i + 1}`}
+              type="button" aria-label={`${label} ${i + 1}`}
               onClick={() => { const next = items.filter((_, j) => j !== i); onChange(next.length ? next : [""]); }}
               className="text-ash hover:text-gred px-2 shrink-0"
             >
@@ -642,7 +646,7 @@ function ListEditor({
         ))}
         {items.length < max && (
           <button type="button" onClick={() => onChange([...items, ""])} className="text-sm text-gblue hover:underline">
-            + Add another
+            {t("jfm.addAnother")}
           </button>
         )}
       </div>
@@ -655,14 +659,15 @@ function LinksEditor({
 }: {
   links: TopicLinks; onChange: (next: TopicLinks) => void; note: string;
 }) {
+  const t = useT();
   return (
     <div>
-      <span className="text-sm font-medium text-ink">Links</span>
+      <span className="text-sm font-medium text-ink">{t("jfm.links")}</span>
       <p className="hint">{note}</p>
       <div className="mt-2 grid sm:grid-cols-2 gap-3">
         {LINK_FIELDS.map((f) => (
           <label key={f.key} className="block">
-            <span className="text-xs text-ash">{f.label}</span>
+            <span className="text-xs text-ash">{t(`link.${f.key}.label`)}</span>
             <input
               type="url" placeholder={f.example} className="input mt-1"
               value={links[f.key] ?? ""}

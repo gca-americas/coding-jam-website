@@ -6,10 +6,13 @@ import { getProjectById } from "@/lib/projects";
 import { getJam, jamsOpenForSubmission, listPublishedJams } from "@/lib/jams";
 import { parseChapter } from "@/lib/chapters";
 import { auth } from "@/auth";
+import { getCopy, getT } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
 export default async function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = await getT();
+  const formCopy = await getCopy(["sf.", "chapter."]);
   const { id } = await params;
   const session = await auth();
   const user = session?.user;
@@ -57,18 +60,19 @@ export default async function EditProjectPage({ params }: { params: Promise<{ id
         <div className="absolute inset-0 diag-bg" />
         <div className="container-page relative py-14 sm:py-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-line text-xs text-ash shadow-soft">
-            <span className="h-1.5 w-1.5 rounded-full bg-gyellow" /> Editing your build
+            <span className="h-1.5 w-1.5 rounded-full bg-gyellow" /> {t("edit.eyebrow")}
           </div>
           <h1 className="h-display text-4xl sm:text-5xl mt-4 max-w-3xl leading-[1.05]">
-            Update <span className="gradient-text">{project.projectName}</span>
+            {t("edit.update")} <span className="gradient-text">{project.projectName}</span>
           </h1>
           <p className="mt-4 text-ash">
-            <Link href="/me" className="text-gblue hover:underline">Cancel and go back</Link>.
+            <Link href="/me" className="text-gblue hover:underline">{t("edit.cancel")}</Link>.
           </p>
         </div>
       </section>
       <section className="container-page py-10 pb-20">
         <SubmitForm
+          copy={formCopy}
           editId={project.id}
           jamChoices={jamChoices}
           builder={{

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * A walkthrough capture that opens full-screen when clicked.
@@ -25,6 +26,7 @@ export default function StepMedia({
   width: number;
   height: number;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -69,7 +71,7 @@ export default function StepMedia({
           className="w-full rounded-xl border border-line transition-shadow group-hover:shadow-lift"
         />
         <span className="pointer-events-none absolute bottom-3 right-3 hidden sm:inline-flex items-center gap-1.5 rounded-full bg-ink/75 px-3 py-1.5 text-xs font-medium text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-          Click to enlarge ⤢
+          {t("sm.enlarge")}
         </span>
       </button>
 

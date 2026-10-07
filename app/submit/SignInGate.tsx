@@ -1,16 +1,16 @@
 import { signIn } from "@/auth";
+import { getT } from "@/lib/i18n";
 
-export default function SignInGate() {
+export default async function SignInGate() {
+  const t = await getT();
   return (
     <div className="card p-8 sm:p-10">
       <div className="text-4xl">🔐</div>
       <h2 className="font-display font-bold text-2xl text-ink mt-4">
-        Sign in with Google to share your build
+        {t("submit.gate.title")}
       </h2>
       <p className="text-ash mt-3 max-w-lg leading-relaxed">
-        Submissions are tied to a real Google identity so the showcase stays free of spam and credit goes to the
-        person who actually built the thing. Your name and avatar appear publicly with the build; your email is
-        kept private and used only for moderation.
+        {t("submit.gate.body")}
       </p>
 
       <form
@@ -25,15 +25,15 @@ export default function SignInGate() {
           className="btn bg-white border border-line shadow-soft hover:shadow-lift transition-all !pl-3"
         >
           <GoogleG />
-          <span className="text-ink font-medium">Sign in with Google</span>
+          <span className="text-ink font-medium">{t("submit.gate.button")}</span>
         </button>
       </form>
 
       <ul className="mt-8 grid sm:grid-cols-2 gap-3 text-sm text-ash">
-        <li className="flex gap-2"><span className="text-ggreen font-bold mt-0.5">✓</span><span>One-click sign-in — no new password to remember.</span></li>
-        <li className="flex gap-2"><span className="text-ggreen font-bold mt-0.5">✓</span><span>Avatar from your Google profile appears on your build card.</span></li>
-        <li className="flex gap-2"><span className="text-ggreen font-bold mt-0.5">✓</span><span>Your email stays private — never displayed.</span></li>
-        <li className="flex gap-2"><span className="text-ggreen font-bold mt-0.5">✓</span><span>You can sign out any time from the top nav.</span></li>
+        <li className="flex gap-2"><span className="text-ggreen font-bold mt-0.5">✓</span><span>{t("submit.gate.p1")}</span></li>
+        <li className="flex gap-2"><span className="text-ggreen font-bold mt-0.5">✓</span><span>{t("submit.gate.p2")}</span></li>
+        <li className="flex gap-2"><span className="text-ggreen font-bold mt-0.5">✓</span><span>{t("submit.gate.p3")}</span></li>
+        <li className="flex gap-2"><span className="text-ggreen font-bold mt-0.5">✓</span><span>{t("submit.gate.p4")}</span></li>
       </ul>
     </div>
   );

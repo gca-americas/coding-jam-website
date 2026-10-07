@@ -1,12 +1,14 @@
-import { ChapterStat } from "@/lib/projects";
+import { ChapterStat, OTHER_CHAPTER } from "@/lib/projects";
+import { getT } from "@/lib/i18n";
 
 const accents = ["bg-gblue", "bg-gred", "bg-gyellow", "bg-ggreen"];
 
-export default function ChapterBoard({ stats }: { stats: ChapterStat[] }) {
+export default async function ChapterBoard({ stats }: { stats: ChapterStat[] }) {
+  const t = await getT();
   if (!stats.length) {
     return (
       <div className="card p-6 text-center text-ash">
-        No chapters yet — be the first to ship a project from your GDG.
+        {t("board.empty")}
       </div>
     );
   }
@@ -16,14 +18,14 @@ export default function ChapterBoard({ stats }: { stats: ChapterStat[] }) {
       <div className="p-6 border-b border-line bg-cloud/60">
         <div className="flex items-end justify-between flex-wrap gap-2">
           <div>
-            <div className="section-eyebrow">Hero board</div>
+            <div className="section-eyebrow">{t("board.eyebrow")}</div>
             <h3 className="font-display font-bold text-2xl text-ink mt-1">
-              GDG chapters jamming
+              {t("board.title")}
             </h3>
           </div>
           <div className="text-sm text-ash">
-            {stats.length} {stats.length === 1 ? "chapter" : "chapters"} ·{" "}
-            {stats.reduce((s, c) => s + c.count, 0)} projects shipped
+            {stats.length} {stats.length === 1 ? t("board.chapter") : t("board.chapters")} ·{" "}
+            {stats.reduce((s, c) => s + c.count, 0)} {t("board.shipped")}
           </div>
         </div>
       </div>
@@ -34,7 +36,9 @@ export default function ChapterBoard({ stats }: { stats: ChapterStat[] }) {
               {i + 1}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-display font-semibold text-ink truncate">{s.chapter}</div>
+              <div className="font-display font-semibold text-ink truncate">
+                {s.chapter === OTHER_CHAPTER ? t("board.other") : s.chapter}
+              </div>
             </div>
             <div className="font-display font-bold text-ink shrink-0 tabular-nums">{s.count}</div>
           </li>

@@ -1,5 +1,6 @@
 import path from "node:path";
 import Link from "next/link";
+import { getT } from "@/lib/i18n";
 import StepMedia from "./StepMedia";
 import { imageSize, type ImageSize } from "./imageSize";
 
@@ -51,7 +52,7 @@ function publicImageSize(src: string): ImageSize | null {
   return imageSize(path.join(process.cwd(), "public", src.replace(/^\//, "")));
 }
 
-export default function ToolGuideShell({
+export default async function ToolGuideShell({
   eyebrow,
   emoji,
   title,
@@ -82,13 +83,14 @@ export default function ToolGuideShell({
   otherHref: string;
   otherLabel: string;
 }) {
+  const t = await getT();
   return (
     <>
       <section className={`relative overflow-hidden ${accent} text-white`}>
         <div className="absolute inset-0 dotted-bg opacity-20" />
         <div className="container-page relative py-16 sm:py-20">
           <Link href="/#jams" className="inline-flex items-center gap-1.5 text-white/80 text-sm hover:text-white">
-            ← Back to the jams
+            {t("guide.back")}
           </Link>
           <div className="mt-6 text-xs font-mono font-semibold tracking-[0.2em] uppercase opacity-90">
             {eyebrow}
@@ -106,11 +108,10 @@ export default function ToolGuideShell({
 
       <section className="container-page py-14 grid lg:grid-cols-3 gap-10 items-start">
         <div className="lg:col-span-2">
-          <div className="section-eyebrow">Before you arrive</div>
-          <h2 className="h-display text-3xl mt-2">A pre-flight checklist.</h2>
+          <div className="section-eyebrow">{t("guide.before.eyebrow")}</div>
+          <h2 className="h-display text-3xl mt-2">{t("guide.before.title")}</h2>
           <p className="text-ash mt-3 max-w-2xl">
-            Do this at home, on decent wifi. Half the workshop time is otherwise lost to setup —
-            this gives it back. Turning up without it is still fine; pair with a TA.
+            {t("guide.before.body")}
           </p>
 
           {notice && (
@@ -154,8 +155,8 @@ export default function ToolGuideShell({
             </div>
           ))}
 
-          <div className="section-eyebrow mt-12">The walkthrough</div>
-          <h2 className="h-display text-2xl mt-2">What you&rsquo;ll do, step by step.</h2>
+          <div className="section-eyebrow mt-12">{t("guide.walkthrough.eyebrow")}</div>
+          <h2 className="h-display text-2xl mt-2">{t("guide.walkthrough.title")}</h2>
 
           <ol className="mt-6 space-y-5">
             {steps.map((s, i) => {
@@ -198,7 +199,7 @@ export default function ToolGuideShell({
                       >
                         <div className="text-2xl">{s.media.kind === "GIF" ? "🎞️" : "🖼️"}</div>
                         <div className="text-sm font-medium text-ink mt-2">
-                          {s.media.kind} goes here
+                          {t("guide.mediaPlaceholder").replace("{kind}", s.media.kind)}
                         </div>
                         <p className="text-xs text-ash mt-1">{s.media.alt}</p>
                         <code className="inline-block mt-3 text-[11px] font-mono bg-white border border-line rounded px-2 py-1 text-ash break-all">
@@ -214,29 +215,27 @@ export default function ToolGuideShell({
 
         <aside className="lg:col-span-1 space-y-6 lg:sticky lg:top-24">
           <div className="card p-6">
-            <div className="section-eyebrow">Not sure yet?</div>
+            <div className="section-eyebrow">{t("guide.notSure.eyebrow")}</div>
             <p className="text-sm text-ink mt-2 leading-relaxed">
-              The two tools suit different rooms. If this one doesn&rsquo;t sound like you, the other
-              probably does.
+              {t("guide.notSure.body")}
             </p>
             <Link href={otherHref} className="btn-ghost w-full mt-4 text-center block !py-2 text-sm">
               {otherLabel}
             </Link>
             <Link href="/#jams" className="text-sm text-gblue hover:underline mt-3 inline-block">
-              Retake the picker →
+              {t("guide.retake")}
             </Link>
           </div>
 
           <div className="card p-6 bg-cloud/50">
             <div className="text-xs uppercase tracking-widest font-semibold text-ash">
-              Running the jam?
+              {t("guide.running.eyebrow")}
             </div>
             <p className="text-sm text-ink mt-2 leading-relaxed">
-              Put whichever tool you&rsquo;ve chosen in the event description, so people arrive with
-              it ready instead of installing during the session.
+              {t("guide.running.body")}
             </p>
             <Link href="/organizer" className="text-sm text-gblue hover:underline mt-3 inline-block">
-              The organizer kit →
+              {t("guide.organizerKit")}
             </Link>
           </div>
         </aside>
@@ -254,7 +253,7 @@ export default function ToolGuideShell({
             <div className="relative p-8 sm:p-12 grid md:grid-cols-[1fr,auto] gap-8 items-center">
               <div>
                 <div className="text-xs font-mono font-semibold tracking-[0.2em] uppercase text-white/70">
-                  Don&rsquo;t know where to start?
+                  {t("guide.codelab.eyebrow")}
                 </div>
                 <h2 className="h-display text-3xl sm:text-5xl mt-3 leading-[1.05]">
                   {codelab.heading}
@@ -262,7 +261,7 @@ export default function ToolGuideShell({
                 <p className="mt-4 text-white/80 max-w-xl text-lg">{codelab.blurb}</p>
               </div>
               <span className="btn bg-white text-ink group-hover:shadow-pop shrink-0 text-base">
-                Open the codelab ↗
+                {t("guide.codelab.open")}
               </span>
             </div>
             <div className="relative grid grid-cols-4 h-2">

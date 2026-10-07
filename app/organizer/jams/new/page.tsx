@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { getCopy, getT } from "@/lib/i18n";
 import { isAdmin } from "@/lib/admins";
 import { canManageJams, getOrganizer } from "@/lib/organizers";
 import { canEditJam, getJam } from "@/lib/jams";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
-import JamForm from "../JamForm";
+import AssistedJamForm from "./AssistedJamForm";
 import NotAnOrganizer from "../NotAnOrganizer";
 import { trackOptions } from "../trackOptions";
 
@@ -15,6 +16,7 @@ export const dynamic = "force-dynamic";
 type SP = { from?: string };
 
 export default async function NewJamPage({ searchParams }: { searchParams: Promise<SP> }) {
+  const t = await getT();
   const session = await auth();
   const email = session?.user?.email?.toLowerCase();
   if (!email) redirect("/");
@@ -35,25 +37,25 @@ export default async function NewJamPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <section className="container-page pt-10">
-        <Link href="/organizer/jams" className="text-sm text-ash hover:text-ink">← Your jams</Link>
+        <Link href="/organizer/jams" className="text-sm text-ash hover:text-ink">{t("newjam.back")}</Link>
         <h1 className="h-display text-4xl mt-3">
-          {copyFrom ? "Run it again." : "Create a jam."}
+          {copyFrom ? t("newjam.again") : t("newjam.create")}
         </h1>
         <p className="text-ash mt-2 max-w-2xl">
           {copyFrom ? (
             <>
-              Everything from <span className="font-medium text-ink">{copyFrom.title}</span> is filled
-              in below — the topic, your chapter, the links. Set a new date, adjust whatever changed,
-              and this saves as a separate jam with its own page. The original is untouched.
+              {t("newjam.copyFrom.a")}{" "}
+              <span className="font-medium text-ink">{copyFrom.title}</span>{" "}
+              {t("newjam.copyFrom.b")}
             </>
           ) : (
-            <>It saves as a draft first — nothing is public until you set it to Published.</>
+            <>{t("newjam.draftFirst")}</>
           )}
         </p>
       </section>
       <section className="container-page py-8 pb-24 max-w-3xl">
-        <JamForm
-          mode="create"
+        <AssistedJamForm
+          notesCopy={await getCopy(["notes."])}
           copyFrom={copyFrom ?? undefined}
           tracks={trackOptions}
           defaults={{

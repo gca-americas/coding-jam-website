@@ -1,14 +1,19 @@
-import { colorClasses, type GColor, type TrackProgramDetails } from "@/lib/tracks";
+"use client";
+
+import { colorClasses } from "@/lib/tracks";
 import type { TopicView } from "@/lib/topic";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * The body of a jam page, rendered from the normalized TopicView.
  *
  * Shared by /jam/[slug] and the no-login builder at /jam/try so a page you
- * mock up anonymously looks exactly like the one you'd publish. Pure props, no
- * server imports — it renders on either side of the client boundary.
+ * mock up anonymously looks exactly like the one you'd publish. Pure props — it
+ * reads its own labels from the client catalogue, so both callers get the same
+ * translated headings without threading a copy prop through either one.
  */
 export default function TopicBody({ view }: { view: TopicView }) {
+  const t = useT();
   const c = colorClasses[view.color];
   const programDetails = view.track?.programDetails;
 
@@ -23,7 +28,7 @@ export default function TopicBody({ view }: { view: TopicView }) {
         <div className="aspect-video rounded-2xl overflow-hidden border border-line">
           <iframe
             src={`https://www.youtube.com/embed/${view.youtubeId}`}
-            title="Demo"
+            title={t("tb.demo")}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
             className="w-full h-full"
@@ -37,16 +42,16 @@ export default function TopicBody({ view }: { view: TopicView }) {
         <>
           {view.mmv && (
             <div>
-              <div className="section-eyebrow">What ships today</div>
-              <h2 className="h-display text-2xl mt-2">The version everyone leaves with.</h2>
+              <div className="section-eyebrow">{t("tb.ships.eyebrow")}</div>
+              <h2 className="h-display text-2xl mt-2">{t("tb.ships.title")}</h2>
               <Prose text={view.mmv} className="mt-3" />
             </div>
           )}
 
           {view.thinkAbout.length > 0 && (
             <div>
-              <div className="section-eyebrow">While you build</div>
-              <h2 className="h-display text-2xl mt-2">Things worth deciding early.</h2>
+              <div className="section-eyebrow">{t("tb.while.eyebrow")}</div>
+              <h2 className="h-display text-2xl mt-2">{t("tb.while.title")}</h2>
               <ul className="mt-4 space-y-3">
                 {view.thinkAbout.map((t, i) => (
                   <li key={i} className="flex gap-3">
@@ -64,8 +69,8 @@ export default function TopicBody({ view }: { view: TopicView }) {
 
           {view.polished.length > 0 && (
             <div>
-              <div className="section-eyebrow">The polished version</div>
-              <h2 className="h-display text-2xl mt-2">What the at-home build adds.</h2>
+              <div className="section-eyebrow">{t("tb.polished.eyebrow")}</div>
+              <h2 className="h-display text-2xl mt-2">{t("tb.polished.title")}</h2>
               <ul className="mt-4 grid sm:grid-cols-2 gap-2">
                 {view.polished.map((p, i) => (
                   <li key={i} className="text-sm text-ink flex gap-2">
@@ -78,31 +83,33 @@ export default function TopicBody({ view }: { view: TopicView }) {
           )}
         </>
       )}
+
     </div>
   );
 }
 
-const ACCENT_BARS = ["bg-gblue", "bg-gred", "bg-gyellow", "bg-ggreen"] as const;
 const PILLAR_CHIPS = [
   "bg-gblue/10 text-gblue ring-1 ring-gblue/30",
   "bg-gred/10 text-gred ring-1 ring-gred/30",
   "bg-gyellow/15 text-yellow-700 ring-1 ring-gyellow/40",
   "bg-ggreen/10 text-ggreen ring-1 ring-ggreen/30",
-] as const;
+];
 
-export function ProgramDetailsSections({
+const ACCENT_BARS = ["bg-gblue", "bg-gred", "bg-gyellow", "bg-ggreen"];
+
+function ProgramDetailsSections({
   details,
   color,
 }: {
-  details: TrackProgramDetails;
-  color: GColor;
+  details: import("@/lib/tracks").TrackProgramDetails;
+  color: import("@/lib/tracks").GColor;
 }) {
   const c = colorClasses[color];
 
   return (
     <div className="space-y-12">
       {/* Concept Overview */}
-      <section id="overview" className="scroll-mt-24">
+      <section id="concept" className="scroll-mt-24">
         <div className="section-eyebrow">Concept overview</div>
         <h2 className="h-display text-2xl sm:text-3xl mt-2">
           Uniting chapters around an annual societal challenge
@@ -281,4 +288,3 @@ export function Prose({ text, className = "" }: { text: string; className?: stri
     </div>
   );
 }
-

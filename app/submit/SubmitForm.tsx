@@ -52,18 +52,22 @@ export type SubmitFormInitial = {
 };
 
 export default function SubmitForm({
+  copy,
   jamChoices,
   builder,
   initial,
   editId,
   jam,
 }: {
+  /** Catalogue slice from the server parent — getT() can't run in a client component. */
+  copy?: Record<string, string>;
   jamChoices: JamChoice[];
   builder: Builder;
   initial?: SubmitFormInitial;
   editId?: string;
   jam?: JamContext | null;
 }) {
+  const t = (key: string, fallback: string) => copy?.[key] ?? fallback;
   const router = useRouter();
   const isEdit = Boolean(editId);
   const [submitting, setSubmitting] = useState(false);
@@ -127,13 +131,13 @@ export default function SubmitForm({
       fd.append("file", file);
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       if (!res.ok) {
-        const j = await res.json().catch(() => ({ error: "Upload failed" }));
-        throw new Error(j.error || "Upload failed");
+        const j = await res.json().catch(() => ({ error: t("sf.err.uploadFailed", "Upload failed") }));
+        throw new Error(j.error || t("sf.err.uploadFailed", "Upload failed"));
       }
       const j = (await res.json()) as { url: string };
       setScreenshotUrl(j.url);
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "Upload failed");
+      setUploadError(err instanceof Error ? err.message : t("sf.err.uploadFailed", "Upload failed"));
       if (fileInputRef.current) fileInputRef.current.value = "";
     } finally {
       setUploading(false);
@@ -151,13 +155,13 @@ export default function SubmitForm({
     if (!chapter.name.trim()) {
       setError(
         chapter.type === "other"
-          ? "Tell us where you're building from."
-          : "Pick your chapter from the directory in Step 2.",
+          ? t("sf.err.chapterOther", "Tell us where you're building from.")
+          : t("sf.err.chapterPick", "Pick your chapter from the directory in Step 2."),
       );
       return;
     }
     if (!screenshotUrl) {
-      setError("A screenshot is required — upload one in Step 3.");
+      setError(t("sf.err.screenshot", "A screenshot is required — upload one in Step 3."));
       return;
     }
     setSubmitting(true);
@@ -196,8 +200,8 @@ export default function SubmitForm({
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const j = await res.json().catch(() => ({ error: "Submission failed" }));
-        throw new Error(j.error || "Submission failed");
+        const j = await res.json().catch(() => ({ error: t("sf.err.submitFailed", "Submission failed") }));
+        throw new Error(j.error || t("sf.err.submitFailed", "Submission failed"));
       }
       if (isEdit) {
         setSuccess(true);
@@ -220,7 +224,7 @@ export default function SubmitForm({
         router.refresh();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : t("sf.err.generic", "Something went wrong"));
       setSubmitting(false);
     }
   }
@@ -231,16 +235,19 @@ export default function SubmitForm({
         <div className="card p-10 text-center">
           <div className="text-5xl">🎉</div>
           <h3 className="font-display font-bold text-2xl text-ink mt-4">
-            {isEdit ? "Saved." : "You’re on the board."}
+            {isEdit ? t("sf.saved", "Saved.") : t("sf.onBoard", "You’re on the board.")}
           </h3>
-          <p className="text-ash mt-2">Redirecting to your profile…</p>
+          <p className="text-ash mt-2">{t("sf.redirecting", "Redirecting to your profile…")}</p>
         </div>
       );
     }
 
     const message = jam
-      ? `I just shipped ${shared.name} at ${jam.title} — a GDG Coding Jam. Two hours, one working app.`
-      : `I just shipped ${shared.name} at a GDG Coding Jam. Two hours, one working app.`;
+      ? t("sf.share.msgJam", "I just shipped {name} at {jam} — a GDG Coding Jam. Two hours, one working app.")
+          .replace("{name}", shared.name)
+          .replace("{jam}", jam.title)
+      : t("sf.share.msg", "I just shipped {name} at a GDG Coding Jam. Two hours, one working app.")
+          .replace("{name}", shared.name);
     const xHref = `https://x.com/intent/post?text=${encodeURIComponent(message)}&url=${encodeURIComponent(shared.url)}`;
     // LinkedIn ignores any text parameter and reads the page's own OG tags.
     const liHref = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shared.url)}`;
@@ -258,13 +265,13 @@ export default function SubmitForm({
     return (
       <div className="card p-10 text-center">
         <div className="text-5xl">🎉</div>
-        <h3 className="font-display font-bold text-2xl text-ink mt-4">You’re on the board.</h3>
+        <h3 className="font-display font-bold text-2xl text-ink mt-4">{t("sf.onBoard", "You’re on the board.")}</h3>
         <p className="text-ash mt-2">
-          <span className="font-medium text-ink">{shared.name}</span> is live on the showcase.
+          <span className="font-medium text-ink">{shared.name}</span> {t("sf.liveOn", "is live on the showcase.")}
         </p>
 
         <div className="mt-7">
-          <div className="text-xs uppercase tracking-widest font-semibold text-ash">Tell people</div>
+          <div className="text-xs uppercase tracking-widest font-semibold text-ash">{t("sf.tellPeople", "Tell people")}</div>
           <div className="mt-3 flex flex-wrap gap-2 justify-center">
             <a
               href={xHref}
@@ -272,7 +279,7 @@ export default function SubmitForm({
               rel="noreferrer"
               className="btn bg-ink text-white hover:shadow-pop !py-2 !px-4 text-sm"
             >
-              Share on X
+              {t("sf.shareX", "Share on X")}
             </a>
             <a
               href={liHref}
@@ -280,18 +287,18 @@ export default function SubmitForm({
               rel="noreferrer"
               className="btn bg-[#0A66C2] text-white hover:shadow-pop !py-2 !px-4 text-sm"
             >
-              Share on LinkedIn
+              {t("sf.shareLi", "Share on LinkedIn")}
             </a>
             <button type="button" onClick={copy} className="btn-ghost !py-2 !px-4 text-sm">
-              {copied ? "Copied ✓" : "Copy link"}
+              {copied ? t("sf.copied", "Copied ✓") : t("sf.copyLink", "Copy link")}
             </button>
           </div>
           <p className="text-xs text-ash mt-3 break-all">{shared.url}</p>
         </div>
 
         <div className="mt-8 pt-6 border-t border-line flex flex-wrap gap-3 justify-center">
-          <a href="/me" className="btn-google !py-2 !px-4 text-sm">Go to my profile</a>
-          <a href="/showcase" className="btn-ghost !py-2 !px-4 text-sm">See all builds</a>
+          <a href="/me" className="btn-google !py-2 !px-4 text-sm">{t("sf.goProfile", "Go to my profile")}</a>
+          <a href="/showcase" className="btn-ghost !py-2 !px-4 text-sm">{t("sf.seeAll", "See all builds")}</a>
         </div>
       </div>
     );
@@ -317,60 +324,67 @@ export default function SubmitForm({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="font-medium text-ink truncate">{builder.name}</span>
-            <span className="chip bg-ggreen/10 text-ggreen ring-1 ring-ggreen/30 shrink-0">✓ Verified</span>
+            <span className="chip bg-ggreen/10 text-ggreen ring-1 ring-ggreen/30 shrink-0">✓ {t("sf.verified", "Verified")}</span>
           </div>
           <div className="text-xs text-ash mt-0.5">
-            Posting as your Google identity — your email stays private.
+            {t("sf.postingAs", "Posting as your Google identity — your email stays private.")}
           </div>
         </div>
       </div>
 
       {/* Content rules — shown before the first field so it's read, not skipped. */}
       <div className="rounded-xl bg-gyellow/10 border border-gyellow/40 p-4 text-sm">
-        <div className="font-medium text-ink">Submit real builds only</div>
+        <div className="font-medium text-ink">{t("sf.rules.title", "Submit real builds only")}</div>
         <p className="text-ash mt-1">
-          Keep submissions relevant to the track you pick, and share one project per
-          submission. Irrelevant, duplicated, or spam entries will be removed and the
-          account banned from the jam. You can submit one project per day.
+          {t("sf.rules.body", "Keep submissions relevant to the track you pick, and share one project per submission. Irrelevant, duplicated, or spam entries will be removed and the account banned from the jam. You can submit one project per day.")}
         </p>
       </div>
 
       {/* The build */}
-      <Section title="The build" eyebrow="Step 1">
+      <Section title={t("sf.sec1", "The build")} eyebrow={t("sf.step1", "Step 1")}>
         {jam ? (
           <>
             <div className="rounded-xl border border-gblue/40 bg-gblue/5 p-4">
               <div className="text-xs uppercase tracking-widest font-semibold text-ash">
-                Submitting to a jam
+                {t("sf.jam.eyebrow", "Submitting to a jam")}
               </div>
               <div className="flex items-start gap-3 mt-2">
                 <span className="text-2xl leading-none">{jam.topicEmoji}</span>
                 <div className="min-w-0">
                   <div className="font-medium text-ink">{jam.title}</div>
                   <p className="text-sm text-ash mt-0.5">
-                    {jam.topicTitle} · led by {jam.organizerName}
+                    {jam.topicTitle} · {t("sf.jam.ledBy", "led by")} {jam.organizerName}
                   </p>
                 </div>
               </div>
               <p className="text-xs text-ash mt-3">
-                Your build will be credited to this jam.{" "}
+                {t("sf.jam.credited", "Your build will be credited to this jam.")}{" "}
                 <a href="/submit" className="text-gblue hover:underline">
-                  Not from this jam?
+                  {t("sf.jam.notFrom", "Not from this jam?")}
                 </a>
               </p>
             </div>
-            <Field label="Project name" hint="What you called it. Make it sing.">
+            <Field label={t("sf.projectName", "Project name")} hint={t("sf.projectName.hint", "What you called it. Make it sing.")}>
               <input name="projectName" required placeholder="Berliner Stimmung" className="input" defaultValue={initial?.projectName ?? ""} />
             </Field>
           </>
         ) : (
-          <div className="grid sm:grid-cols-2 gap-4">
+          <>
+            {/* The dropdown is the step people get wrong, so the alternative
+                sits right next to it rather than only in the band above. */}
+            <p className="text-sm text-ash">
+              {t("sf.fromJamInline", "Submitting for a jam? Open its page and submit from there instead —")}{" "}
+              <a href="/jams" className="text-gblue hover:underline font-medium">
+                {t("sf.fromJamInline.cta", "find your jam \u2192")}
+              </a>
+            </p>
+            <div className="grid sm:grid-cols-2 gap-4">
             <Field
-              label="Which jam?"
+              label={t("sf.whichJam", "Which jam?")}
               hint={
                 jamChoices.length > 0
-                  ? "Jams held in the last two weeks. Built this on your own? Leave it as \u201cI\u2019m not in a jam\u201d."
-                  : "No jams have run in the last two weeks, so there's nothing to credit this to yet."
+                  ? t("sf.whichJam.hint", "Jams held in the last two weeks. Built this on your own? Leave it as \u201cI\u2019m not in a jam\u201d.")
+                  : t("sf.whichJam.hintNone", "No jams have run in the last two weeks, so there's nothing to credit this to yet.")
               }
             >
               <select
@@ -379,7 +393,7 @@ export default function SubmitForm({
                 value={jamSlug}
                 onChange={(e) => setJamSlug(e.target.value)}
               >
-                <option value="">I&rsquo;m not in a jam</option>
+                <option value="">{t("sf.notInJam", "I\u2019m not in a jam")}</option>
                 {jamChoices.map((j) => (
                   <option key={j.slug} value={j.slug}>
                     {j.title}
@@ -388,19 +402,20 @@ export default function SubmitForm({
                 ))}
               </select>
             </Field>
-            <Field label="Project name" hint="What you called it. Make it sing.">
+            <Field label={t("sf.projectName", "Project name")} hint={t("sf.projectName.hint", "What you called it. Make it sing.")}>
               <input name="projectName" required placeholder="Berliner Stimmung" className="input" defaultValue={initial?.projectName ?? ""} />
             </Field>
-          </div>
+            </div>
+          </>
         )}
       </Section>
 
       {/* The chapter */}
-      <Section title="Your GDG chapter" eyebrow="Step 2">
-        <Field label="Is this a GDG chapter?">
-          <ChapterPicker type={chapter.type} name={chapter.name} onChange={setChapter} />
+      <Section title={t("sf.sec2", "Your GDG chapter")} eyebrow={t("sf.step2", "Step 2")}>
+        <Field label={t("sf.isGdg", "Is this a GDG chapter?")}>
+          <ChapterPicker copy={copy} type={chapter.type} name={chapter.name} onChange={setChapter} />
         </Field>
-        <Field label="Country" hint="Where your chapter is based.">
+        <Field label={t("sf.country", "Country")} hint={t("sf.country.hint", "Where your chapter is based.")}>
           <select name="country" required defaultValue={initial?.country ?? DEFAULT_COUNTRY} className="input">
             {COUNTRIES.map((c) => (
               <option key={c} value={c}>
@@ -410,8 +425,8 @@ export default function SubmitForm({
           </select>
         </Field>
         <Field
-          label="Collaborator emails (optional)"
-          hint="Pair-programmed with one or more people? Add their emails — they&rsquo;ll get credit toward their builder badges next time they sign in. Up to 10."
+          label={t("sf.collab", "Collaborator emails (optional)")}
+          hint={t("sf.collab.hint", "Pair-programmed with one or more people? Add their emails — they\u2019ll get credit toward their builder badges next time they sign in. Up to 10.")}
         >
           <div className="space-y-2">
             {collaborators.map((row, idx) => (
@@ -426,7 +441,7 @@ export default function SubmitForm({
                 <button
                   type="button"
                   onClick={() => removeCollaborator(row.id)}
-                  aria-label="Remove collaborator"
+                  aria-label={t("sf.collab.remove", "Remove collaborator")}
                   className="shrink-0 h-10 w-10 rounded-lg text-ash hover:text-gred hover:bg-gred/10 transition-colors flex items-center justify-center text-lg leading-none"
                 >
                   ×
@@ -439,7 +454,7 @@ export default function SubmitForm({
                 onClick={addCollaborator}
                 className="text-sm text-gblue hover:underline font-medium"
               >
-                + Add another collaborator
+                {t("sf.collab.add", "+ Add another collaborator")}
               </button>
             )}
           </div>
@@ -447,17 +462,17 @@ export default function SubmitForm({
       </Section>
 
       {/* The links */}
-      <Section title="The links" eyebrow="Step 3">
+      <Section title={t("sf.sec3", "The links")} eyebrow={t("sf.step3", "Step 3")}>
         <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Repo URL" hint="Required. GitHub, GitLab, Codeberg — anywhere public.">
+          <Field label={t("sf.repo", "Repo URL")} hint={t("sf.repo.hint", "Required. GitHub, GitLab, Codeberg — anywhere public.")}>
             <input type="url" name="repoUrl" required placeholder="https://github.com/you/your-build" className="input" defaultValue={initial?.repoUrl ?? ""} />
           </Field>
-          <Field label="Video / walkthrough URL (optional)" hint="YouTube, Loom, anything embeddable.">
+          <Field label={t("sf.video", "Video / walkthrough URL (optional)")} hint={t("sf.video.hint", "YouTube, Loom, anything embeddable.")}>
             <input type="url" name="videoUrl" placeholder="https://youtu.be/..." className="input" defaultValue={initial?.videoUrl ?? ""} />
           </Field>
         </div>
 
-        <Field label="Screenshot" hint="Required. A hero image for your project card. PNG, JPG, WebP, or GIF — up to 8 MB.">
+        <Field label={t("sf.shot", "Screenshot")} hint={t("sf.shot.hint", "Required. A hero image for your project card. PNG, JPG, WebP, or GIF — up to 8 MB.")}>
           <div className="space-y-3">
             <input
               ref={fileInputRef}
@@ -468,7 +483,7 @@ export default function SubmitForm({
               required={!screenshotUrl}
               className="block w-full text-sm text-ash file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gblue/10 file:text-gblue hover:file:bg-gblue/20 disabled:opacity-60"
             />
-            {uploading && <p className="text-xs text-ash">Uploading…</p>}
+            {uploading && <p className="text-xs text-ash">{t("sf.uploading", "Uploading…")}</p>}
             {uploadError && (
               <p className="text-xs text-gred">{uploadError}</p>
             )}
@@ -477,11 +492,11 @@ export default function SubmitForm({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={screenshotUrl}
-                  alt="Screenshot preview"
+                  alt={t("sf.shotAlt", "Screenshot preview")}
                   className="h-20 w-32 object-cover rounded-md border border-line"
                 />
                 <div className="flex-1 min-w-0 text-xs">
-                  <div className="font-medium text-ink">Uploaded</div>
+                  <div className="font-medium text-ink">{t("sf.uploaded", "Uploaded")}</div>
                   <div className="text-ash truncate" title={screenshotUrl}>
                     {screenshotUrl}
                   </div>
@@ -490,7 +505,7 @@ export default function SubmitForm({
                     onClick={clearScreenshot}
                     className="mt-1 text-gred hover:underline font-medium"
                   >
-                    Remove
+                    {t("sf.remove", "Remove")}
                   </button>
                 </div>
               </div>
@@ -498,30 +513,30 @@ export default function SubmitForm({
           </div>
         </Field>
 
-        <Field label="Live demo URL (optional)" hint="Cloud Run / Vercel / wherever it's running.">
+        <Field label={t("sf.demo", "Live demo URL (optional)")} hint={t("sf.demo.hint", "Cloud Run / Vercel / wherever it's running.")}>
           <input type="url" name="demoUrl" placeholder="https://your-build.run.app" className="input" defaultValue={initial?.demoUrl ?? ""} />
         </Field>
       </Section>
 
       {/* The pitch */}
-      <Section title="The pitch" eyebrow="Step 4">
+      <Section title={t("sf.sec4", "The pitch")} eyebrow={t("sf.step4", "Step 4")}>
         <Field
-          label="What does your project do?"
-          hint="2–4 sentences. What it is, who it&rsquo;s for, the cool part. Skip the build story — that&rsquo;s the next field."
+          label={t("sf.desc", "What does your project do?")}
+          hint={t("sf.desc.hint", "2\u20134 sentences. What it is, who it\u2019s for, the cool part. Skip the build story \u2014 that\u2019s the next field.")}
         >
           <textarea
             name="description"
             rows={4}
             maxLength={500}
-            placeholder="Mood Jar lets you type how you're feeling and drops a tiny kawaii token into a glass jar. The jar fills up over the week — a quiet, visual mood log without the journaling pressure."
+            placeholder={t("sf.desc.ph", "Mood Jar lets you type how you're feeling and drops a tiny kawaii token into a glass jar. The jar fills up over the week — a quiet, visual mood log without the journaling pressure.")}
             className="input resize-none"
             defaultValue={initial?.description ?? ""}
           />
         </Field>
 
         <Field
-          label="Which Google tech did you use?"
-          hint="Optional. Tap everything your build actually calls — it&rsquo;s how people find work like theirs on the showcase."
+          label={t("sf.tech", "Which Google tech did you use?")}
+          hint={t("sf.tech.hint", "Optional. Tap everything your build actually calls \u2014 it\u2019s how people find work like theirs on the showcase.")}
         >
           <div className="space-y-3">
             {GOOGLE_TECH_GROUPS.map((group) => (
@@ -556,17 +571,17 @@ export default function SubmitForm({
       </Section>
 
       {/* The reflection */}
-      <Section title="The reflection" eyebrow="Step 5">
+      <Section title={t("sf.sec5", "The reflection")} eyebrow={t("sf.step5", "Step 5")}>
         <Field
-          label="What surprised you?"
-          hint="1–2 sentences. The thing you didn&rsquo;t expect. This is the most-read field on the showcase."
+          label={t("sf.surprise", "What surprised you?")}
+          hint={t("sf.surprise.hint", "1\u20132 sentences. The thing you didn\u2019t expect. This is the most-read field on the showcase.")}
         >
           <textarea
             name="surprise"
             required
             rows={4}
             maxLength={400}
-            placeholder="I assumed I'd have to coach Gemini into being empathetic. Turns out it already was — and the instruction I deleted was the one telling it to be kind."
+            placeholder={t("sf.surprise.ph", "I assumed I'd have to coach Gemini into being empathetic. Turns out it already was — and the instruction I deleted was the one telling it to be kind.")}
             className="input resize-none"
             defaultValue={initial?.surprise ?? ""}
           />
@@ -581,10 +596,16 @@ export default function SubmitForm({
 
       <div className="flex items-center justify-between gap-3 pt-2 border-t border-line">
         <p className="text-xs text-ash">
-          By submitting, you confirm the links you&rsquo;re sharing are public and don&rsquo;t contain secrets.
+          {t("sf.confirm", "By submitting, you confirm the links you\u2019re sharing are public and don\u2019t contain secrets.")}
         </p>
         <button disabled={submitting || uploading} className="btn-google disabled:opacity-60">
-          {submitting ? (isEdit ? "Saving…" : "Submitting…") : isEdit ? "Save changes" : "Ship it →"}
+          {submitting
+            ? isEdit
+              ? t("sf.saving", "Saving…")
+              : t("sf.submitting", "Submitting…")
+            : isEdit
+              ? t("sf.saveChanges", "Save changes")
+              : t("sf.shipIt", "Ship it →")}
         </button>
       </div>
     </form>

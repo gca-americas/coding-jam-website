@@ -1,9 +1,15 @@
 import Link from "next/link";
+import { getCopy, getT } from "@/lib/i18n";
+import { localizeTracks } from "@/lib/i18n/tracks";
 import Timeline from "@/components/Timeline";
 import HowItWorks from "@/components/HowItWorks";
 import { TRACKS } from "@/lib/tracks";
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const t = await getT();
+  const timelineCopy = await getCopy(["tl."]);
+  const tracks = await localizeTracks(TRACKS);
+  const hiwCopy = await getCopy(["hiw."]);
   return (
     <>
       {/* Hero */}
@@ -11,60 +17,56 @@ export default function AboutPage() {
         <div className="absolute inset-0 dotted-bg opacity-50" />
         <div className="container-page relative py-20 sm:py-24">
           <Link href="/" className="inline-flex items-center gap-1.5 text-ash text-sm hover:text-ink">
-            ← Back to home
+            {t("about.back")}
           </Link>
           <div className="mt-6 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-line text-xs text-ash shadow-soft">
-            <span className="h-1.5 w-1.5 rounded-full bg-gblue" /> About the initiative
+            <span className="h-1.5 w-1.5 rounded-full bg-gblue" /> {t("about.eyebrow")}
           </div>
           <h1 className="h-display text-5xl sm:text-7xl mt-6 max-w-3xl leading-[1.02]">
-            A jam session.<br />
-            Not a <span className="text-gred">hackathon</span>.
+            {t("about.title.a")}<br />
+            {t("about.title.b")} <span className="text-gred">{t("about.title.hackathon")}</span>{t("about.title.c")}
           </h1>
           <p className="mt-6 text-lg text-ash max-w-2xl">
-            GDG Coding Jams transform standard tech meetups into vibrant, hands-on community sandboxes where
-            developers actually <em>build</em> together. Two hours, a slice of pizza, Google&rsquo;s AI stack — and a
-            real prototype walking out the door.
+            {t("about.lede")}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/#jams" className="btn-google">Browse the jams</Link>
-            <Link href="/organizer" className="btn-ghost">I&rsquo;m an organizer</Link>
+            <Link href="/#jams" className="btn-google">{t("about.cta.browse")}</Link>
+            <Link href="/organizer" className="btn-ghost">{t("about.cta.organizer")}</Link>
           </div>
         </div>
       </section>
 
       {/* How it works — the 30-second visual explainer */}
-      <HowItWorks />
+      <HowItWorks copy={hiwCopy} />
 
       {/* The concept */}
       <section className="container-page pb-20">
         <div className="grid sm:grid-cols-3 gap-8 items-start">
           <div className="sm:col-span-1">
-            <div className="section-eyebrow">Why it works</div>
-            <h2 className="h-display text-3xl mt-2">A jam, not a hackathon.</h2>
+            <div className="section-eyebrow">{t("about.why.eyebrow")}</div>
+            <h2 className="h-display text-3xl mt-2">{t("about.why.title")}</h2>
             <p className="text-ash mt-4">
-              Think of a musical jam or an after-work pottery class. Instruments out, a creative prompt, two hours
-              of making something tangible alongside friends. We bring that energy to software.
+              {t("about.why.p1")}
             </p>
             <p className="text-ash mt-4">
-              No sit-and-listen tech talks. No 48-hour competitive hackathon grind. Just blueprints, tech access,
-              and collaborative space.
+              {t("about.why.p2")}
             </p>
           </div>
           <div className="sm:col-span-2 grid sm:grid-cols-3 gap-4">
             <ValueCard
               accent="bg-gblue"
-              title="Frictionless upskilling"
-              body="Developers learn Google's AI tools best when they're actively building. We remove the blank-page syndrome."
+              title={t("about.value1.title")}
+              body={t("about.value1.body")}
             />
             <ValueCard
               accent="bg-gred"
-              title="Low organizer burden"
-              body="Materials, timelines, and goals provided. Organizers book a room and bring the snacks."
+              title={t("about.value2.title")}
+              body={t("about.value2.body")}
             />
             <ValueCard
               accent="bg-ggreen"
-              title="Stronger communities"
-              body="Collaborative problem-solving builds a deeper network than passive networking ever does."
+              title={t("about.value3.title")}
+              body={t("about.value3.body")}
             />
           </div>
         </div>
@@ -76,26 +78,25 @@ export default function AboutPage() {
       <section className="container-page py-20">
         <div className="grid sm:grid-cols-2 gap-12 items-start">
           <div>
-            <div className="section-eyebrow">The rhythm of a jam</div>
-            <h2 className="h-display text-3xl mt-2">Two hours, four movements.</h2>
+            <div className="section-eyebrow">{t("about.rhythm.eyebrow")}</div>
+            <h2 className="h-display text-3xl mt-2">{t("about.rhythm.title")}</h2>
             <p className="text-ash mt-4 max-w-md">
-              Predictable, fast-paced, engaging. We keep the talking short and the building long. Organizers act as
-              facilitators, guiding the room through a unified creative process.
+              {t("about.rhythm.body")}
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
-              <span className="pill">⏱️ 2 hours</span>
-              <span className="pill">🚀 Antigravity-powered</span>
-              <span className="pill">🍕 Pizza included</span>
-              <span className="pill">💻 Bring your laptop</span>
-              <span className="pill">🎟️ Free</span>
+              <span className="pill">⏱️ {t("about.pill.hours")}</span>
+              <span className="pill">🚀 {t("about.pill.powered")}</span>
+              <span className="pill">🍕 {t("about.pill.pizza")}</span>
+              <span className="pill">💻 {t("about.pill.laptop")}</span>
+              <span className="pill">🎟️ {t("about.pill.free")}</span>
             </div>
             <p className="mt-6 text-sm text-ash italic max-w-md border-l-2 border-line pl-3">
-              The goal in the room is always to ship the <span className="font-medium not-italic text-ink">core
-              feature in 45 minutes</span> — the one thing that proves the concept. Push toward the polished
-              version on your own time.
+              {t("about.goal.a")}{" "}
+              <span className="font-medium not-italic text-ink">{t("about.goal.b")}</span>{" "}
+              {t("about.goal.c")}
             </p>
           </div>
-          <Timeline />
+          <Timeline copy={timelineCopy} />
         </div>
       </section>
 
@@ -103,44 +104,41 @@ export default function AboutPage() {
       <section className="container-page py-20">
         <div className="grid sm:grid-cols-2 gap-12 items-start">
           <div>
-            <div className="section-eyebrow">Your room, your topic</div>
-            <h2 className="h-display text-3xl mt-2">Set your own topic. Or borrow one of nine.</h2>
+            <div className="section-eyebrow">{t("about.topic.eyebrow")}</div>
+            <h2 className="h-display text-3xl mt-2">{t("about.topic.title")}</h2>
             <p className="text-ash mt-4">
-              The organizer running the room decides what it builds. Point at your own dataset, take on
-              something your city actually needs, or write a brief from scratch — the format holds either
-              way, because the two hours are what make it a jam, not the subject.
+              {t("about.topic.p1")}
             </p>
             <p className="text-ash mt-3">
-              <span className="font-medium text-ink">No idea where to start?</span> Take one of the nine
-              built-in topics instead. Eight are complete, drop-in projects that ship in two hours, brief
-              and starter repo already written; the ninth is an open canvas for a room that wants to
-              invent its own thing. They don&rsquo;t depend on each other — pick whichever sounds most fun
-              for your community and go.
+              <span className="font-medium text-ink">{t("about.topic.p2.lead")}</span>{" "}
+              {t("about.topic.p2")}
             </p>
+            <p className="text-ash mt-3">
+              {t("about.topic.p3")}
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3 text-sm">
+              <Link href="/#jams" className="text-gblue hover:underline font-medium">
+                {t("about.topic.browse")}
+              </Link>
+            </div>
             <div className="mt-6 card p-4 bg-cloud/40">
-              <div className="text-xs uppercase tracking-widest font-semibold text-ash">Loose grouping (if curious)</div>
+              <div className="text-xs uppercase tracking-widest font-semibold text-ash">{t("about.differ.eyebrow")}</div>
               <ul className="mt-2 text-sm text-ink space-y-1.5">
-                <li><span className="font-mono text-xs text-ash mr-2">01–02</span> Image-gen pair — same tech, different prompt patterns</li>
-                <li><span className="font-mono text-xs text-ash mr-2">10</span> AI for Good</li>
-                <li><span className="font-mono text-xs text-ash mr-2">03</span> The turn — from pretty things to organizing your life</li>
-                <li><span className="font-mono text-xs text-ash mr-2">04–08</span> Language-driven utility</li>
-                <li><span className="font-mono text-xs text-ash mr-2">09</span> Open canvas — bring your own idea</li>
+                <li><span className="font-medium">{t("about.differ.1.b")}</span> {t("about.differ.1")}</li>
+                <li><span className="font-medium">{t("about.differ.2.b")}</span> {t("about.differ.2")}</li>
+                <li><span className="font-medium">{t("about.differ.3.b")}</span> {t("about.differ.3")}</li>
               </ul>
             </div>
           </div>
           <ol className="card divide-y divide-line">
-            {TRACKS.map((t, i) => {
-              const accents = ["bg-gblue", "bg-gred", "bg-gyellow", "bg-ggreen"];
-              const dot = accents[i % 4];
-              return (
-                <ArcRow
-                  key={t.slug}
-                  label={t.number.toString().padStart(2, "0")}
-                  body={`${t.project} — ${t.tagline}`}
-                  color={dot}
-                />
-              );
-            })}
+            {tracks.map((track, i) => (
+              <ArcRow
+                key={track.slug}
+                label={track.emoji}
+                body={`${track.name} — ${track.summary}`}
+                color={["bg-gblue", "bg-gred", "bg-gyellow", "bg-ggreen"][i % 4]}
+              />
+            ))}
           </ol>
         </div>
       </section>
@@ -151,18 +149,17 @@ export default function AboutPage() {
           <div className="absolute inset-0 dotted-bg opacity-10" />
           <div className="relative p-10 sm:p-14 text-white grid sm:grid-cols-2 gap-8 items-center">
             <div>
-              <h2 className="h-display text-3xl sm:text-4xl">Ready to jam?</h2>
+              <h2 className="h-display text-3xl sm:text-4xl">{t("about.cta2.title")}</h2>
               <p className="mt-3 text-white/80 max-w-md">
-                Open any track and ship a working app in the next 45 minutes. Or grab the kit and host a jam in
-                your city.
+                {t("about.cta2.body")}
               </p>
             </div>
             <div className="flex flex-wrap gap-3 sm:justify-end">
-              <Link href="/#jams" className="btn bg-white text-ink hover:shadow-pop">
-                Browse the lineup
+              <Link href="/organizer#track-notes" className="btn bg-white text-ink hover:shadow-pop">
+                {t("about.cta2.lineup")}
               </Link>
               <Link href="/organizer" className="btn border border-white/30 text-white hover:bg-white/10">
-                Run a jam
+                {t("about.cta2.run")}
               </Link>
             </div>
           </div>

@@ -6,10 +6,10 @@ export type ChapterType = "gdg" | "campus" | "other";
 
 const MAX_RESULTS = 50;
 
-const TYPE_LABELS: { value: ChapterType; label: string; hint: string }[] = [
-  { value: "gdg", label: "GDG chapter", hint: "A city chapter — pick yours from the directory." },
-  { value: "campus", label: "GDG on Campus", hint: "A university chapter — pick yours from the directory." },
-  { value: "other", label: "Not a GDG chapter", hint: "Building solo or with another community? Type where you're from." },
+const TYPE_LABELS: { value: ChapterType; key: string; label: string; hint: string }[] = [
+  { value: "gdg", key: "gdg", label: "GDG chapter", hint: "A city chapter — pick yours from the directory." },
+  { value: "campus", key: "campus", label: "GDG on Campus", hint: "A university chapter — pick yours from the directory." },
+  { value: "other", key: "other", label: "Not a GDG chapter", hint: "Building solo or with another community? Type where you're from." },
 ];
 
 /** Strips accents so typing "Sao Paulo" finds "São Paulo" and "Montreal" finds "Montréal". */
@@ -37,14 +37,18 @@ function rank(list: string[], query: string): string[] {
 }
 
 export default function ChapterPicker({
+  copy,
   type,
   name,
   onChange,
 }: {
+  /** Catalogue slice from a server parent. Absent means English. */
+  copy?: Record<string, string>;
   type: ChapterType;
   name: string;
   onChange: (next: { type: ChapterType; name: string }) => void;
 }) {
+  const t = (key: string, fallback: string) => copy?.[key] ?? fallback;
   const [query, setQuery] = useState(name);
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
@@ -71,7 +75,7 @@ export default function ChapterPicker({
     setLoadError(null);
     fetch(`/api/chapters?type=${type}`)
       .then((r) => {
-        if (!r.ok) throw new Error("Could not load the chapter directory.");
+        if (!r.ok) throw new Error(t("chapter.loadError", "Could not load the chapter directory."));
         return r.json() as Promise<{ chapters: string[] }>;
       })
       .then((j) => {
@@ -80,7 +84,7 @@ export default function ChapterPicker({
         setList(j.chapters);
       })
       .catch((e: unknown) => {
-        if (!cancelled) setLoadError(e instanceof Error ? e.message : "Could not load the chapter directory.");
+        if (!cancelled) setLoadError(e instanceof Error ? e.message : t("chapter.loadError", "Could not load the chapter directory."));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -136,28 +140,29 @@ export default function ChapterPicker({
     }
   }
 
-  const activeHint = TYPE_LABELS.find((t) => t.value === type)?.hint ?? "";
+  const active = TYPE_LABELS.find((x) => x.value === type);
+  const activeHint = active ? t(`chapter.${active.key}.hint`, active.hint) : "";
 
   return (
     <div className="space-y-3">
       {/* Which kind of chapter is this? */}
       <div className="grid sm:grid-cols-3 gap-2">
-        {TYPE_LABELS.map((t) => {
-          const active = t.value === type;
+        {TYPE_LABELS.map((opt) => {
+          const on = opt.value === type;
           return (
             <button
-              key={t.value}
+              key={opt.value}
               type="button"
-              onClick={() => pickType(t.value)}
-              aria-pressed={active}
+              onClick={() => pickType(opt.value)}
+              aria-pressed={on}
               className={[
                 "px-3 py-2 rounded-xl border text-sm font-medium transition-colors text-left",
-                active
+                on
                   ? "border-gblue bg-gblue/10 text-gblue"
                   : "border-line bg-white text-ash hover:border-gblue/40 hover:text-ink",
               ].join(" ")}
             >
-              {t.label}
+              {t(`chapter.${opt.key}.label`, opt.label)}
             </button>
           );
         })}
@@ -169,7 +174,7 @@ export default function ChapterPicker({
           onChange={(e) => onChange({ type, name: e.target.value })}
           required
           maxLength={80}
-          placeholder="Where are you building from?"
+          placeholder={t("chapter.otherPlaceholder", "Where are you building from?")}
           className="input"
         />
       ) : (
@@ -190,7 +195,13 @@ export default function ChapterPicker({
             aria-autocomplete="list"
             aria-controls="chapter-listbox"
             autoComplete="off"
-            placeholder={loading ? "Loading directory…" : type === "gdg" ? "Start typing your city — Seattle, Chicago, Austin…" : "Start typing your university…"}
+            placeholder={
+              loading
+                ? t("chapter.loading", "Loading directory…")
+                : type === "gdg"
+                  ? t("chapter.placeholderCity", "Start typing your city — Seattle, Chicago, Austin…")
+                  : t("chapter.placeholderUni", "Start typing your university…")
+            }
             disabled={loading || Boolean(loadError)}
             className="input"
           />
@@ -203,8 +214,8 @@ export default function ChapterPicker({
             >
               {results.length === 0 ? (
                 <li className="px-3 py-2 text-sm text-ash">
-                  No chapter matches “{query.trim()}”. Check the spelling, or choose{" "}
-                  <b>Not a GDG chapter</b>.
+                  {t("chapter.noMatch", "No chapter matches “{q}”. Check the spelling, or choose").replace("{q}", query.trim())}{" "}
+                  <b>{t("chapter.other.label", "Not a GDG chapter")}</b>.
                 </li>
               ) : (
                 results.map((c, i) => (
@@ -234,7 +245,7 @@ export default function ChapterPicker({
             </p>
           )}
           {!loadError && !name && query.trim() && !loading && (
-            <p className="text-xs text-gred mt-1">Pick a chapter from the list to continue.</p>
+            <p className="text-xs text-gred mt-1">{t("chapter.pickToContinue", "Pick a chapter from the list to continue.")}</p>
           )}
         </div>
       )}

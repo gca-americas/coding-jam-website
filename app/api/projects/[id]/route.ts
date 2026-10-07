@@ -43,8 +43,11 @@ function normalizeCollaboratorEmails(raw: unknown): string[] | undefined {
 }
 
 /**
- * `allowAdmin` widens the check for moderation. Admins can delete any build
- * from /admin, but editing stays owner-only — removing spam is moderation,
+ * `allowAdmin` widens the check for moderation, and the returned `isOwner` says
+ * which of the two got you in — callers narrow what an admin may change.
+ *
+ * Admins can delete any build and correct which jam it belongs to. They cannot
+ * touch the prose: removing spam or fixing an attribution is moderation,
  * rewriting someone's project description is putting words in their mouth.
  */
 async function loadOwnedProject(req: Request, id: string, allowAdmin = false) {
@@ -61,15 +64,25 @@ async function loadOwnedProject(req: Request, id: string, allowAdmin = false) {
   if (!isOwner && !(allowAdmin && (await isAdmin(user.email)))) {
     return { error: NextResponse.json({ error: "Not your build." }, { status: 403 }) };
   }
-  return { user, project };
+  return { user, project, isOwner };
 }
+
+/**
+ * What an admin may PATCH on a build that is not theirs.
+ *
+ * Builders pick their jam from a dropdown and get it wrong often enough that
+ * whole rooms end up unattributed, and only an admin can see the whole picture
+ * well enough to fix it. Everything stored for the new jam is read off the jam
+ * record server-side, so this cannot be used to write arbitrary text.
+ */
+const ADMIN_PATCHABLE = new Set(["jamSlug"]);
 
 export async function PATCH(
   req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id } = await ctx.params;
-  const guard = await loadOwnedProject(req, id);
+  const guard = await loadOwnedProject(req, id, true);
   if ("error" in guard) return guard.error;
 
   let body: Record<string, unknown>;
@@ -79,12 +92,22 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
+  if (!guard.isOwner) {
+    const outOfScope = Object.keys(body).filter((k) => !ADMIN_PATCHABLE.has(k));
+    if (outOfScope.length > 0) {
+      return NextResponse.json(
+        { error: `Admins can only reassign the jam, not ${outOfScope.join(", ")}.` },
+        { status: 403 },
+      );
+    }
+  }
+
   const patch: Record<string, unknown> = {};
 
   if (body.trackNumber !== undefined) {
     const n = Number(body.trackNumber);
-    if (!Number.isInteger(n) || n < 0 || n > 10) {
-      return NextResponse.json({ error: "trackNumber must be 0–10" }, { status: 400 });
+    if (!Number.isInteger(n) || n < 0 || n > 9) {
+      return NextResponse.json({ error: "trackNumber must be 0–9" }, { status: 400 });
     }
     patch.trackNumber = n;
   }
@@ -114,7 +137,7 @@ export async function PATCH(
       patch.organizerName = jam.organizerName;
       patch.organizerEmail = jam.organizerEmail;
       patch.topicLabel = view.title;
-      patch.trackNumber = view.track ? view.track.number : 0;
+      patch.trackNumber = view.track?.number ?? 0;
     }
   }
 
@@ -207,7 +230,8 @@ export async function DELETE(
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id } = await ctx.params;
-  const guard = await loadOwnedProject(req, id);
+  // Moderation: an admin can remove any build, per loadOwnedProject's contract.
+  const guard = await loadOwnedProject(req, id, true);
   if ("error" in guard) return guard.error;
 
   const ok = await deleteProject(id);

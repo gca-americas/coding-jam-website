@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Jam, PublicJam } from "@/lib/jams";
-import { topicView } from "@/lib/topic";
+import { topicView, type TopicView } from "@/lib/topic";
 import { colorClasses, trackLabel, type Track } from "@/lib/tracks";
 
 /**
@@ -11,11 +11,21 @@ import { colorClasses, trackLabel, type Track } from "@/lib/tracks";
 export default function JamCard({
   jam,
   builds,
+  view: viewProp,
+  copy,
 }: {
   jam: Jam | PublicJam;
   builds: number;
+  /**
+   * A view already localized by a server caller. topicView() is pure and can't
+   * read the request locale, and this card is rendered from a client parent on
+   * the homepage — so the translation has to arrive as a prop.
+   */
+  view?: TopicView;
+  copy?: Record<string, string>;
 }) {
-  const view = topicView(jam.topic);
+  const t = (k: string, fallback: string) => copy?.[k] ?? fallback;
+  const view = viewProp ?? topicView(jam.topic);
   return (
     <CardShell
       href={`/jam/${jam.slug}`}
@@ -26,9 +36,9 @@ export default function JamCard({
       topicTitle={view.title}
       tagline={view.tagline}
       footerLeft={jam.eventDate ?? jam.country}
-      footerRight={`${builds} build${builds === 1 ? "" : "s"}`}
-      note={`Led by ${jam.organizerName}`}
-      noteBadge={jam.organizerIsGde ? "Google Developer Expert" : undefined}
+      footerRight={t(builds === 1 ? "card.buildOne" : "card.buildMany", builds === 1 ? "{n} build" : "{n} builds").replace("{n}", String(builds))}
+      note={t("card.ledBy", "Led by {name}").replace("{name}", jam.organizerName)}
+      noteBadge={jam.organizerIsGde ? t("card.gde", "Google Developer Expert") : undefined}
     />
   );
 }
@@ -39,11 +49,16 @@ export default function JamCard({
  */
 export type ReadyMadeTrack = {
   slug: string;
-  number: number;
+  /** Present on drop-in tracks; absent on built-in topics, which aren't numbered. */
+  number?: number;
   project: string;
   tagline: string;
   emoji: string;
   color: Track["color"];
+  /** Where the card links. Defaults to the track page. */
+  href?: string;
+  /** Overrides the "Track NN" eyebrow. */
+  eyebrow?: string;
 };
 
 /**
@@ -54,18 +69,32 @@ export type ReadyMadeTrack = {
  * nobody is actually running these, and implying otherwise on a page that
  * lists real events would be a lie the reader can't check.
  */
-export function ReadyMadeJamCard({ track, builds }: { track: ReadyMadeTrack; builds: number }) {
+export function ReadyMadeJamCard({
+  track,
+  builds,
+  copy,
+}: {
+  track: ReadyMadeTrack;
+  builds: number;
+  copy?: Record<string, string>;
+}) {
+  const t = (k: string, fallback: string) => copy?.[k] ?? fallback;
   return (
     <CardShell
-      href={`/tracks/${track.slug}`}
-      eyebrow={`Track ${trackLabel(track.number)}`}
+      href={track.href ?? `/tracks/${track.slug}`}
+      eyebrow={
+        track.eyebrow ??
+        (track.number !== undefined
+          ? `${t("card.track", "Track")} ${trackLabel(track.number)}`
+          : t("card.builtIn", "Built-in topic"))
+      }
       title={track.project}
       emoji={track.emoji}
       color={track.color}
       tagline={track.tagline}
-      footerLeft="Ready to run"
-      footerRight={`${builds} build${builds === 1 ? "" : "s"}`}
-      note="No lead yet — bring it to your chapter"
+      footerLeft={t("card.readyToRun", "Ready to run")}
+      footerRight={t(builds === 1 ? "card.buildOne" : "card.buildMany", builds === 1 ? "{n} build" : "{n} builds").replace("{n}", String(builds))}
+      note={t("card.noLead", "No lead yet — bring it to your chapter")}
       muted
     />
   );

@@ -12,7 +12,10 @@ import AdminsManager from "./AdminsManager";
 import OrganizersManager, { type OrganizerTotals } from "./OrganizersManager";
 import AdminDateRange from "./AdminDateRange";
 import AdminJamsTable, { type AdminJamRow } from "./AdminJamsTable";
-import AdminSubmissionsTable, { type AdminSubmissionRow } from "./AdminSubmissionsTable";
+import AdminSubmissionsTable, {
+  type AdminSubmissionRow,
+  type JamOption,
+} from "./AdminSubmissionsTable";
 import BlocklistManager from "./BlocklistManager";
 
 export const dynamic = "force-dynamic";
@@ -207,6 +210,17 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     submittedAt: p.submittedAt,
   }));
 
+  /* Reassignment targets. Published only, newest first — the API refuses a
+     draft or archived jam, so offering one would only produce an error. */
+  const jamOptions: JamOption[] = jams
+    .filter((j) => j.status === "published")
+    .map((j) => ({
+      slug: j.slug,
+      title: j.title,
+      chapter: j.chapter,
+      eventDate: j.eventDate,
+    }));
+
   const href = (t: TabId) => {
     const p = new URLSearchParams();
     if (t !== "overview") p.set("tab", t);
@@ -328,6 +342,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             total={projects.length}
             ranged={ranged}
             blockedEmails={blocked.map((b) => b.email)}
+            jams={jamOptions}
           />
         </section>
       )}

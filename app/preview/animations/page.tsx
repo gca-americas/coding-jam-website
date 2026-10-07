@@ -12,7 +12,7 @@ const LETTER_COLORS = [
 ];
 
 export default function AnimationsPreview() {
-  const tracks = TRACKS.filter((t) => t.youtubeId);
+  const tracks = TRACKS.filter((t) => t.video?.youtubeId);
   const [idx, setIdx] = useState(0);
   const [fading, setFading] = useState(false);
 
@@ -185,9 +185,9 @@ export default function AnimationsPreview() {
                 style={{ animationDelay: "300ms" }}
               >
                 <iframe
-                  key={current.youtubeId}
-                  src={`https://www.youtube-nocookie.com/embed/${current.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${current.youtubeId}&controls=0&disablekb=1&modestbranding=1&rel=0&playsinline=1`}
-                  title={`${current.project} demo`}
+                  key={current.video?.youtubeId}
+                  src={`https://www.youtube-nocookie.com/embed/${current.video?.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${current.video?.youtubeId}&controls=0&disablekb=1&modestbranding=1&rel=0&playsinline=1`}
+                  title={`${current.name} demo`}
                   allow="autoplay; encrypted-media; picture-in-picture"
                   loading="lazy"
                   className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-300 ${fading ? "opacity-0" : "opacity-100"}`}
@@ -195,7 +195,7 @@ export default function AnimationsPreview() {
                 {/* Now-playing label */}
                 <div className="absolute top-3 left-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/70 text-white text-xs backdrop-blur-sm">
                   <span className="h-1.5 w-1.5 rounded-full bg-gred animate-pulse" />
-                  Track {String(current.number).padStart(2, "0")} · {current.project}
+                  Track {String(current.number).padStart(2, "0")} · {current.name}
                 </div>
                 {/* Progress dots */}
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">

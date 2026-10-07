@@ -13,6 +13,8 @@
  * pulled into the runtime when local mode is active.
  */
 
+import { canonicalChapterName, formatChapter } from "./chapters";
+
 export type Project = {
   id: string;
   trackNumber: number;
@@ -307,20 +309,53 @@ export function chapterMatchKey(chapter: string, country: string): string {
   return `${chapter.replace(/\s+/g, " ").trim().toLowerCase()}__${country.trim().toLowerCase()}`;
 }
 
+/** The single row everything unrecognised is folded into. */
+export const OTHER_CHAPTER = "Other";
+
+/**
+ * The directory entry a submitted chapter label refers to, or null.
+ *
+ * Submitters type the label freehand on older submissions, so the board sees
+ * "nyc" and "GDG NYC" as different chapters, alongside genuine noise like
+ * "abc" and "HOME". Resolving against the directory does two things: it folds
+ * the variants of a real chapter together under one canonical name, and it
+ * tells us what is not a chapter at all.
+ */
+function resolveChapterLabel(label: string): string | null {
+  const bare = label
+    .replace(/^\s*gdg on campus\s*/i, "")
+    .replace(/^\s*gdg\s*/i, "")
+    .trim();
+  if (!bare) return null;
+  for (const type of ["gdg", "campus"] as const) {
+    const canonical = canonicalChapterName(type, bare);
+    if (canonical) return formatChapter(type, canonical);
+  }
+  return null;
+}
+
 export function chapterStats(projects: ReadonlyArray<PublicProject | Project>): ChapterStat[] {
   const map = new Map<string, ChapterStat>();
+  let other = 0;
+
   for (const p of projects) {
-    const key = chapterMatchKey(p.chapter, p.country);
-    const cur = map.get(key);
-    if (cur) {
-      cur.count += 1;
-    } else {
-      // First sighting wins the display label — keeps the canonical form stable
-      // even if later submissions arrive with messier casing.
-      map.set(key, { chapter: normalizeChapter(p.chapter), country: p.country, count: 1 });
+    const resolved = resolveChapterLabel(p.chapter ?? "");
+    if (!resolved) {
+      // Not in either directory — a one-off, a typo, or a placeholder. It is a
+      // real build either way, so it is counted, just not named on the board.
+      other += 1;
+      continue;
     }
+    const key = chapterMatchKey(resolved, p.country);
+    const cur = map.get(key);
+    if (cur) cur.count += 1;
+    else map.set(key, { chapter: resolved, country: p.country, count: 1 });
   }
-  return [...map.values()].sort((a, b) => b.count - a.count);
+
+  const rows = [...map.values()].sort((a, b) => b.count - a.count);
+  // Always last, however many it holds — it is a remainder, not a ranking.
+  if (other > 0) rows.push({ chapter: OTHER_CHAPTER, country: "", count: other });
+  return rows;
 }
 
 /**

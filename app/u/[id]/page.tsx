@@ -4,6 +4,7 @@ import ProjectCard from "@/components/ProjectCard";
 import BadgeCard from "@/components/BadgeCard";
 import { badgesFor, type EarnedBadge } from "@/lib/badges";
 import { listProjectsByProfileId, toPublic } from "@/lib/projects";
+import { getT } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -22,16 +23,18 @@ export async function generateMetadata({
   const projects = await listProjectsByProfileId(id);
   if (projects.length === 0) return {};
 
+  const t = await getT();
   const own = projects.find((p) => p.submitterProfileId === id);
-  const name = own?.builderName ?? "A builder";
+  const name = own?.builderName ?? t("profile.aBuilder");
   const newest = projects[0];
   const count = projects.length;
 
-  const title = `${name} — GDG Coding Jams`;
-  const description =
-    count === 1
-      ? `${name} shipped ${newest.projectName} at a Coding Jam with ${newest.chapter}.`
-      : `${name} has shipped ${count} builds at Coding Jams with ${newest.chapter}.`;
+  const title = t("meta.profile.title").replace("{name}", name);
+  const description = t(count === 1 ? "meta.profile.descOne" : "meta.profile.descMany")
+    .replace("{name}", name)
+    .replace("{project}", newest.projectName)
+    .replace("{n}", String(count))
+    .replace("{chapter}", newest.chapter);
   const image = newest.screenshotUrl || "/og-default.png";
 
   return {
@@ -55,6 +58,7 @@ const BAR_BG: Record<EarnedBadge["color"], string> = {
 };
 
 export default async function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const t = await getT();
   const { id } = await params;
   if (!id || !/^[a-f0-9]{12}$/i.test(id)) notFound();
 
@@ -65,7 +69,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   // If they're only credited as a collaborator, use the first build's metadata
   // we have, but blank the name (we don't know their canonical name).
   const ownBuild = projects.find((p) => p.submitterProfileId === id);
-  const builderName = ownBuild?.builderName ?? "A builder";
+  const builderName = ownBuild?.builderName ?? t("profile.aBuilder");
   const builderImage = ownBuild?.builderImage;
 
   const count = projects.length;
@@ -106,17 +110,17 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
             )}
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-line text-xs text-ash shadow-soft">
-                <span className="h-1.5 w-1.5 rounded-full bg-gblue" /> Builder profile
+                <span className="h-1.5 w-1.5 rounded-full bg-gblue" /> {t("profile.eyebrow")}
               </div>
               <h1 className="h-display text-4xl sm:text-5xl mt-3 leading-[1.05]">{builderName}</h1>
             </div>
           </div>
           <div className="mt-6 grid sm:grid-cols-2 gap-4 max-w-2xl">
-            <Stat n={count} label={count === 1 ? "build shipped" : "builds shipped"} />
+            <Stat n={count} label={count === 1 ? t("me.buildShipped") : t("me.buildsShipped")} />
             <div className="card p-5">
               <div className="flex items-baseline justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-xs text-ash">Current tier</div>
+                  <div className="text-xs text-ash">{t("me.currentTier")}</div>
                   <div className="font-display font-bold text-2xl text-ink mt-0.5 truncate">{tierLabel}</div>
                 </div>
                 {nextLabel && (
@@ -128,8 +132,8 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
               </div>
               <div className="text-[11px] text-ash mt-2">
                 {nextBadge
-                  ? `${buildsToNext} ${buildsToNext === 1 ? "build" : "builds"} to unlock`
-                  : "All badges earned ★"}
+                  ? t(buildsToNext === 1 ? "me.toUnlockOne" : "me.toUnlockMany").replace("{n}", String(buildsToNext))
+                  : t("me.allEarned")}
               </div>
             </div>
           </div>
@@ -137,9 +141,9 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       </section>
 
       <section className="container-page py-10">
-        <div className="section-eyebrow">Badges</div>
+        <div className="section-eyebrow">{t("me.badges")}</div>
         <h2 className="font-display font-bold text-2xl text-ink mt-1">
-          What they&rsquo;ve earned so far.
+          {t("profile.earnedSoFar")}
         </h2>
         <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {badges.map((b) => (
@@ -149,9 +153,9 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       </section>
 
       <section className="container-page py-10 pb-20">
-        <div className="section-eyebrow">Their builds</div>
+        <div className="section-eyebrow">{t("profile.theirBuilds")}</div>
         <h2 className="font-display font-bold text-2xl text-ink mt-1">
-          {count === 1 ? "1 build on the board." : `${count} builds on the board.`}
+          {t(count === 1 ? "profile.onBoardOne" : "profile.onBoardMany").replace("{n}", String(count))}
         </h2>
         <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {publicProjects.map((p) => (

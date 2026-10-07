@@ -24,18 +24,21 @@ export type FilterState = {
  * silently widen the results out from under someone who arrived that way.
  */
 export default function ShowcaseFilters({
+  copy,
   chapters,
   jams,
   initial,
   track,
   resultCount,
 }: {
+  copy?: Record<string, string>;
   chapters: Array<{ chapter: string; count: number }>;
   jams: Array<{ slug: string; title: string; count: number }>;
   initial: FilterState;
   track?: string;
   resultCount: number;
 }) {
+  const t = (k: string, fallback: string) => copy?.[k] ?? fallback;
   const router = useRouter();
   const [f, setF] = useState<FilterState>(initial);
 
@@ -70,38 +73,38 @@ export default function ShowcaseFilters({
   return (
     <div className="card p-6">
       <div className="flex items-baseline justify-between gap-3">
-        <div className="section-eyebrow">Find a build</div>
+        <div className="section-eyebrow">{t("sc.find", "Find a build")}</div>
         {active && (
           <button
             type="button"
             onClick={() => setF({ q: "", chapter: "", jam: "", from: "", to: "" })}
             className="text-xs text-gblue hover:underline"
           >
-            Clear
+            {t("sc.clear", "Clear")}
           </button>
         )}
       </div>
 
       <div className="mt-4 space-y-3">
         <label className="block">
-          <span className="text-xs text-ash">Build name</span>
+          <span className="text-xs text-ash">{t("sc.buildName", "Build name")}</span>
           <input
             type="search"
             value={f.q}
             onChange={(e) => set({ q: e.target.value })}
-            placeholder="Search by project name…"
+            placeholder={t("sc.searchPlaceholder", "Search by project name…")}
             className="input mt-1"
           />
         </label>
 
         <label className="block">
-          <span className="text-xs text-ash">GDG group</span>
+          <span className="text-xs text-ash">{t("sc.group", "GDG group")}</span>
           <select
             value={f.chapter}
             onChange={(e) => set({ chapter: e.target.value })}
             className="input mt-1"
           >
-            <option value="">All groups</option>
+            <option value="">{t("sc.allGroups", "All groups")}</option>
             {chapters.map((c) => (
               <option key={c.chapter} value={c.chapter}>
                 {c.chapter} ({c.count})
@@ -112,13 +115,13 @@ export default function ShowcaseFilters({
 
         {jams.length > 0 && (
           <label className="block">
-            <span className="text-xs text-ash">Jam</span>
+            <span className="text-xs text-ash">{t("sc.jam", "Jam")}</span>
             <select
               value={f.jam}
               onChange={(e) => set({ jam: e.target.value })}
               className="input mt-1"
             >
-              <option value="">All jams</option>
+              <option value="">{t("sc.allJams", "All jams")}</option>
               {jams.map((j) => (
                 <option key={j.slug} value={j.slug}>
                   {j.title} ({j.count})
@@ -129,7 +132,7 @@ export default function ShowcaseFilters({
         )}
 
         <div>
-          <span className="text-xs text-ash">Submitted between</span>
+          <span className="text-xs text-ash">{t("sc.between", "Submitted between")}</span>
           <div className="mt-1 grid grid-cols-2 gap-2">
             <input
               type="date"
@@ -137,7 +140,7 @@ export default function ShowcaseFilters({
               max={f.to || undefined}
               onChange={(e) => set({ from: e.target.value })}
               className="input"
-              aria-label="Submitted on or after"
+              aria-label={t("sc.onAfter", "Submitted on or after")}
             />
             <input
               type="date"
@@ -145,7 +148,7 @@ export default function ShowcaseFilters({
               min={f.from || undefined}
               onChange={(e) => set({ to: e.target.value })}
               className="input"
-              aria-label="Submitted on or before"
+              aria-label={t("sc.onBefore", "Submitted on or before")}
             />
           </div>
         </div>
@@ -154,8 +157,8 @@ export default function ShowcaseFilters({
       {active && (
         <p className="text-xs text-ash mt-4">
           {resultCount === 0
-            ? "Nothing matches those filters."
-            : `${resultCount} ${resultCount === 1 ? "build" : "builds"} match.`}
+            ? t("sc.noMatch", "Nothing matches those filters.")
+            : t(resultCount === 1 ? "sc.matchOne" : "sc.matchMany", resultCount === 1 ? "{n} build matches." : "{n} builds match.").replace("{n}", String(resultCount))}
         </p>
       )}
     </div>

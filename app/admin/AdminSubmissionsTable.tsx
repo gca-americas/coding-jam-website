@@ -17,8 +17,12 @@ export type AdminSubmissionRow = {
   submittedAt: string;
 };
 
+/** A jam a build can be reassigned to. Published only — the API rejects the rest. */
+export type JamOption = { slug: string; title: string; chapter: string; eventDate?: string };
+
 /**
- * Submission moderation: delete a build, or block the account behind it.
+ * Submission moderation: reassign a build to the right jam, delete it, or block
+ * the account behind it.
  *
  * Blocking and deleting are separate on purpose. Removing one off-topic build
  * shouldn't bar someone from the community, and blocking a spammer shouldn't
@@ -34,18 +38,23 @@ export default function AdminSubmissionsTable({
   total,
   ranged,
   blockedEmails,
+  jams,
 }: {
   rows: AdminSubmissionRow[];
   total: number;
   ranged: boolean;
   /** Lowercased emails already on the blocklist, so rows can show their state. */
   blockedEmails: string[];
+  /** Published jams, for the reassign picker. */
+  jams: JamOption[];
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [blockingId, setBlockingId] = useState<string | null>(null);
+  const [movingId, setMovingId] = useState<string | null>(null);
+  const [moveSlug, setMoveSlug] = useState("");
   const [blockEmail, setBlockEmail] = useState("");
   const [blockReason, setBlockReason] = useState("");
   const [, startTransition] = useTransition();
@@ -55,9 +64,52 @@ export default function AdminSubmissionsTable({
   function openBlock(row: AdminSubmissionRow) {
     setError(null);
     setNotice(null);
+    setMovingId(null);
     setBlockingId(row.id);
     setBlockEmail(row.builderEmail ?? "");
     setBlockReason(`Spam — "${row.projectName}"`);
+  }
+
+  function openMove(row: AdminSubmissionRow) {
+    setError(null);
+    setNotice(null);
+    setBlockingId(null);
+    setMovingId(row.id);
+    setMoveSlug(row.jamSlug ?? "");
+  }
+
+  /**
+   * Reassign a build to another jam, or clear it back to NA.
+   *
+   * Only the slug goes over the wire. The server reads the jam's title,
+   * organizer, topic and track off the jam record, so those four can't drift
+   * out of step with each other the way they would if the client sent them.
+   */
+  async function move(row: AdminSubmissionRow) {
+    setError(null);
+    setNotice(null);
+    setBusy(row.id);
+    try {
+      const res = await fetch(`/api/projects/${encodeURIComponent(row.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jamSlug: moveSlug }),
+      });
+      const j = await res.json().catch(() => ({ error: "Move failed." }));
+      if (!res.ok) throw new Error(j.error || "Move failed.");
+      const to = jams.find((x) => x.slug === moveSlug);
+      setNotice(
+        to
+          ? `Moved “${row.projectName}” to ${to.title}.`
+          : `Cleared the jam on “${row.projectName}”.`,
+      );
+      setMovingId(null);
+      startTransition(() => router.refresh());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Move failed.");
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function remove(row: AdminSubmissionRow) {
@@ -166,14 +218,24 @@ export default function AdminSubmissionsTable({
                   )}
                 </td>
                 <td className="py-2 text-ink">{row.chapter}</td>
-                <td className="py-2 text-ash truncate">
-                  {row.jamSlug ? (
-                    <Link href={`/jam/${row.jamSlug}`} className="text-gblue hover:underline">
-                      {row.jamTitle ?? row.jamSlug}
-                    </Link>
-                  ) : (
-                    <span className="text-ash/60">NA</span>
-                  )}
+                <td className="py-2 text-ash">
+                  <div className="flex items-baseline gap-2">
+                    {row.jamSlug ? (
+                      <Link href={`/jam/${row.jamSlug}`} className="text-gblue hover:underline truncate">
+                        {row.jamTitle ?? row.jamSlug}
+                      </Link>
+                    ) : (
+                      <span className="text-ash/60">NA</span>
+                    )}
+                    <button
+                      type="button"
+                      disabled={busy === row.id}
+                      onClick={() => openMove(row)}
+                      className="text-[11px] text-ash hover:text-gblue font-medium shrink-0 disabled:opacity-60"
+                    >
+                      Change
+                    </button>
+                  </div>
                 </td>
                 <td className={row.organizerName ? "py-2 text-ink" : "py-2 text-ash/60"}>
                   {row.organizerName ?? "NA"}
@@ -204,6 +266,52 @@ export default function AdminSubmissionsTable({
                   </button>
                 </td>
               </tr>,
+              movingId === row.id && (
+                <tr key={`${row.id}-move`} className="border-b border-line/60 bg-gblue/5">
+                  <td colSpan={7} className="py-4 px-2">
+                    <div className="flex flex-wrap items-end gap-3">
+                      <label className="block min-w-0 flex-1 sm:flex-none sm:w-96">
+                        <span className="block text-xs text-ash">
+                          Move &ldquo;{row.projectName}&rdquo; to
+                        </span>
+                        <select
+                          autoFocus
+                          value={moveSlug}
+                          onChange={(e) => setMoveSlug(e.target.value)}
+                          className="input mt-1"
+                        >
+                          <option value="">NA — not from a jam</option>
+                          {jams.map((j) => (
+                            <option key={j.slug} value={j.slug}>
+                              {j.title} · {j.chapter}
+                              {j.eventDate ? ` · ${j.eventDate}` : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <button
+                        type="button"
+                        disabled={busy === row.id || moveSlug === (row.jamSlug ?? "")}
+                        onClick={() => move(row)}
+                        className="btn-google !py-2 !px-4 text-sm disabled:opacity-60"
+                      >
+                        {busy === row.id ? "Moving…" : "Move"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMovingId(null)}
+                        className="text-sm text-ash hover:text-ink"
+                      >
+                        Cancel
+                      </button>
+                      <p className="text-xs text-ash w-full">
+                        The jam decides the track, the organizer credit and the topic label —
+                        all three are rewritten from the jam record.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ),
               blockingId === row.id && (
                 <tr key={`${row.id}-block`} className="border-b border-line/60 bg-gred/5">
                   <td colSpan={7} className="py-4 px-2">

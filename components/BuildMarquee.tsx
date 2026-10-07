@@ -67,7 +67,7 @@ function BuildCard({ project }: { project: PublicProject }) {
   const href = project.submitterProfileId
     ? `/u/${project.submitterProfileId}`
     : `/showcase?q=${encodeURIComponent(project.projectName)}`;
-  const label = project.topicLabel ?? track?.project ?? "Built their own";
+  const label = project.topicLabel ?? track?.name ?? "Built their own";
 
   return (
     <Link

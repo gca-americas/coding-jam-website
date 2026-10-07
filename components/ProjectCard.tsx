@@ -1,18 +1,25 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import type { PublicProject } from "@/lib/projects";
 import { organizerCredit } from "@/lib/attribution";
+import { useT } from "@/lib/i18n/client";
 import { googleTechLabel } from "@/lib/google-tech";
 import { TRACKS, colorClasses, trackLabel } from "@/lib/tracks";
+import ProjectLightbox from "./ProjectLightbox";
 
 export default function ProjectCard({ project }: { project: PublicProject }) {
+  const t = useT();
+  const [zoomed, setZoomed] = useState(false);
   const isCustom = project.trackNumber === 0;
   const track = TRACKS.find((t) => t.number === project.trackNumber);
   const c = track ? colorClasses[track.color] : colorClasses.blue;
   // A build from a jam with a non-track topic has no track number to show, so
   // the chip falls back to the topic the organizer set for that week.
   const trackChipLabel = isCustom
-    ? project.topicLabel ?? "Built their own"
-    : `Track ${trackLabel(project.trackNumber)}`;
+    ? project.topicLabel ?? t("pc.builtOwn")
+    : `${t("card.track")} ${trackLabel(project.trackNumber)}`;
   const fallbackEmoji = isCustom ? "🛠️" : track?.emoji ?? "✨";
   const profileHref = project.submitterProfileId ? `/u/${project.submitterProfileId}` : null;
   // Ids are stored; a tag retired from the catalog since submission resolves to
@@ -23,7 +30,12 @@ export default function ProjectCard({ project }: { project: PublicProject }) {
 
   return (
     <article className="card card-hover overflow-hidden flex flex-col">
-      <div className={`relative h-40 bg-gradient-to-br ${c.gradient} text-white p-5`}>
+      <button
+        type="button"
+        onClick={() => setZoomed(true)}
+        aria-label={`Enlarge ${project.projectName}`}
+        className={`group/shot relative block h-40 w-full cursor-zoom-in overflow-hidden bg-gradient-to-br text-left ${c.gradient} text-white p-5`}
+      >
         {project.screenshotUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
@@ -48,7 +60,13 @@ export default function ProjectCard({ project }: { project: PublicProject }) {
         <div className="absolute bottom-4 left-5 right-5">
           <div className="font-display font-bold text-xl text-white drop-shadow">{project.projectName}</div>
         </div>
-      </div>
+        {/* Affordance only on hover — the cards are already busy at rest. */}
+        <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover/shot:opacity-100">
+          <span className="rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-ink shadow-lift">
+            Enlarge
+          </span>
+        </span>
+      </button>
       <div className="p-5 flex-1 flex flex-col">
         <div className="flex items-center gap-2.5 text-sm">
           {project.builderImage ? (
@@ -113,7 +131,7 @@ export default function ProjectCard({ project }: { project: PublicProject }) {
               rel="noreferrer"
               className="inline-flex items-center justify-center gap-1.5 w-full px-4 py-2 rounded-lg bg-gblue text-white text-sm font-semibold hover:bg-gblue/90 transition-colors shadow-soft"
             >
-              Live demo ↗
+              {t("pc.liveDemo")}
             </a>
           )}
           <div className="flex items-center gap-3 text-xs">
@@ -130,6 +148,7 @@ export default function ProjectCard({ project }: { project: PublicProject }) {
           </div>
         </div>
       </div>
+      {zoomed && <ProjectLightbox project={project} onClose={() => setZoomed(false)} />}
     </article>
   );
 }

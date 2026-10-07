@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { getT } from "@/lib/i18n";
 import { isAdmin } from "@/lib/admins";
 import { canManageJams } from "@/lib/organizers";
 import { canEditJam, getJam } from "@/lib/jams";
@@ -17,6 +18,7 @@ export default async function EditJamPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ imageError?: string }>;
 }) {
+  const t = await getT();
   const session = await auth();
   const email = session?.user?.email?.toLowerCase();
   if (!email) redirect("/");
@@ -34,7 +36,7 @@ export default async function EditJamPage({
   return (
     <>
       <section className="container-page pt-10">
-        <Link href="/organizer/jams" className="text-sm text-ash hover:text-ink">← Your jams</Link>
+        <Link href="/organizer/jams" className="text-sm text-ash hover:text-ink">{t("newjam.back")}</Link>
         <h1 className="h-display text-4xl mt-3">{jam.title}</h1>
         <p className="text-ash mt-2 font-mono text-sm">/jam/{jam.slug}</p>
       </section>

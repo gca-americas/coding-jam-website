@@ -20,6 +20,42 @@
  */
 import { getTrack, type GColor, type Track } from "./tracks";
 
+/**
+ * Renamed or retired track slugs, mapped to what replaced them.
+ *
+ * A jam stores the slug it was created with, so a jam outlives any rename. The
+ * old numbered catalogue's Track 09 became "your-own-idea" when the catalogue
+ * merged; without this, every jam created against it renders the
+ * "topic unavailable" placeholder on a real event page.
+ *
+ * Add a line here whenever a track's slug changes. Removing a track without a
+ * successor is fine — those fall through to the placeholder, which is honest.
+ */
+const TRACK_SLUG_ALIASES: Record<string, string> = {
+  "build-your-own-idea": "your-own-idea",
+};
+
+
+/** A built-in topic rendered through the same shape as a track. */
+export function topicViewFromOpenTrack(topic: Track): TopicView {
+  return {
+    kind: "track",
+    title: topic.name,
+    tagline: topic.summary,
+    color: topic.color,
+    emoji: topic.emoji,
+    mmv: topic.requirement ?? topic.mmv ?? "",
+    thinkAbout: topic.guidance ?? topic.thinkAbout ?? [],
+    tech: topic.tech,
+    polished: topic.examples ?? topic.polished ?? [],
+    links: {
+      codelabUrl: topic.codelab?.url,
+      videoUrl: topic.video?.url,
+    },
+    youtubeId: topic.video?.youtubeId,
+  };
+}
+
 export const TOPIC_KINDS = ["track", "custom"] as const;
 export type TopicKind = (typeof TOPIC_KINDS)[number];
 
@@ -73,12 +109,7 @@ export const LINK_FIELDS: Array<{
 ];
 
 export type Topic =
-  | {
-      kind: "track";
-      trackSlug: string;
-      color?: GColor;
-      heroImageUrl?: string;
-    }
+  | { kind: "track"; trackSlug: string; color?: GColor; heroImageUrl?: string }
   | {
       kind: "custom";
       title: string;
@@ -128,24 +159,27 @@ export type TopicView = {
   track?: Track;
 };
 
-export function topicViewFromTrack(track: Track): TopicView {
+export function topicViewFromTrack(
+  track: Track,
+  overrides?: { color?: GColor; heroImageUrl?: string },
+): TopicView {
   return {
     kind: "track",
-    title: track.project,
-    tagline: track.tagline,
-    color: track.color,
+    title: track.name,
+    tagline: track.summary,
+    color: overrides?.color ?? track.color,
     emoji: track.emoji,
-    mmv: track.mmv,
-    thinkAbout: track.thinkAbout,
+    mmv: track.requirement ?? track.mmv ?? "",
+    thinkAbout: track.guidance ?? track.thinkAbout ?? [],
     tech: track.tech,
-    polished: track.polished,
+    polished: track.examples ?? track.polished ?? [],
     links: {
-      codelabUrl: track.codelabUrl || undefined,
+      codelabUrl: track.codelab?.url,
       starterRepo: track.starterRepo || undefined,
-      videoUrl: track.videoUrl || undefined,
+      videoUrl: track.video?.url,
     },
-    heroImageUrl: track.screenshotUrl || undefined,
-    youtubeId: track.youtubeId,
+    heroImageUrl: overrides?.heroImageUrl,
+    youtubeId: track.video?.youtubeId,
     track,
   };
 }
@@ -160,7 +194,12 @@ export function youtubeIdFrom(url: string | undefined): string | undefined {
 export function topicView(topic: Topic): TopicView {
   switch (topic.kind) {
     case "track": {
-      const track = getTrack(topic.trackSlug);
+      const track =
+        getTrack(topic.trackSlug) ??
+        getTrack(TRACK_SLUG_ALIASES[topic.trackSlug] ?? "");
+      if (!track) {
+        // Retired track with a successor — render the topic that replaced it.
+      }
       // A stored slug can outlive a rename. Degrade to a readable placeholder
       // rather than throwing on a page render.
       if (!track) {
@@ -168,22 +207,16 @@ export function topicView(topic: Topic): TopicView {
           kind: "track",
           title: "Topic unavailable",
           tagline: "This jam points at a track that no longer exists.",
-          color: topic.color ?? "blue",
+          color: "blue",
           emoji: "❓",
           mmv: "",
           thinkAbout: [],
           tech: [],
           polished: [],
           links: {},
-          heroImageUrl: topic.heroImageUrl,
         };
       }
-      const base = topicViewFromTrack(track);
-      return {
-        ...base,
-        color: topic.color ?? base.color,
-        heroImageUrl: topic.heroImageUrl ?? base.heroImageUrl,
-      };
+      return topicViewFromTrack(track, { color: topic.color, heroImageUrl: topic.heroImageUrl });
     }
 
     case "custom":
@@ -260,32 +293,10 @@ export function safeUrl(v: unknown): string | null {
  * rendering an image nobody here can moderate or take down.
  */
 export function isOwnedUploadUrl(url: string, prefix = "jams/"): boolean {
-  if (
-    process.env.NODE_ENV !== "production" &&
-    url.startsWith(`/uploads/${prefix}`) &&
-    !url.includes("..")
-  ) {
-    return true;
-  }
+  if (url.startsWith("/uploads/")) return true;
   const bucket = process.env.GCS_UPLOADS_BUCKET;
   if (!bucket) return false;
   return url.startsWith(`https://storage.googleapis.com/${bucket}/${prefix}`);
-}
-
-function parseHeroImageUrl(rawHero: string): { url?: string } | { error: string } {
-  if (!rawHero) return {};
-  if (process.env.NODE_ENV !== "production" && rawHero.startsWith("/uploads/")) {
-    if (!isOwnedUploadUrl(rawHero)) {
-      return { error: "Hero image must be uploaded here rather than linked from another site." };
-    }
-    return { url: rawHero };
-  }
-  const url = safeUrl(rawHero);
-  if (!url) return { error: "Hero image must be a full https:// link." };
-  if (!isOwnedUploadUrl(url)) {
-    return { error: "Hero image must be uploaded here rather than linked from another site." };
-  }
-  return { url };
 }
 
 function parseList(
@@ -339,17 +350,25 @@ export function parseTopic(input: unknown): TopicParse {
 
   if (kind === "track") {
     const trackSlug = str(src.trackSlug);
-    if (!trackSlug) return { error: "Pick a track." };
+    if (!trackSlug) return { error: "Pick a topic." };
     if (!getTrack(trackSlug)) return { error: "That track doesn't exist." };
     const color: GColor | undefined = isGColor(src.color) ? src.color : undefined;
-    const hero = parseHeroImageUrl(str(src.heroImageUrl));
-    if ("error" in hero) return hero;
+    let heroImageUrl: string | undefined;
+    const rawHero = str(src.heroImageUrl);
+    if (rawHero) {
+      const url = safeUrl(rawHero);
+      if (!url) return { error: "Hero image must be a full https:// link." };
+      if (!isOwnedUploadUrl(url)) {
+        return { error: "Hero image must be uploaded here rather than linked from another site." };
+      }
+      heroImageUrl = url;
+    }
     return {
       topic: {
         kind: "track",
         trackSlug,
         ...(color ? { color } : {}),
-        ...(hero.url ? { heroImageUrl: hero.url } : {}),
+        ...(heroImageUrl ? { heroImageUrl } : {}),
       },
     };
   }
@@ -385,9 +404,16 @@ export function parseTopic(input: unknown): TopicParse {
   }
   const emoji = rawEmoji || "✨";
 
-  const hero = parseHeroImageUrl(str(src.heroImageUrl));
-  if ("error" in hero) return hero;
-  const heroImageUrl = hero.url;
+  let heroImageUrl: string | undefined;
+  const rawHero = str(src.heroImageUrl);
+  if (rawHero) {
+    const url = safeUrl(rawHero);
+    if (!url) return { error: "Hero image must be a full https:// link." };
+    if (!isOwnedUploadUrl(url)) {
+      return { error: "Hero image must be uploaded here rather than linked from another site." };
+    }
+    heroImageUrl = url;
+  }
 
   return {
     topic: {

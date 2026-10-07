@@ -1,4 +1,5 @@
 import { CountryStat } from "@/lib/projects";
+import { getT } from "@/lib/i18n";
 
 /**
  * Top countries by projects shipped.
@@ -7,17 +8,18 @@ import { CountryStat } from "@/lib/projects";
  * (color must follow the entity, not its position). Bars carry magnitude; the
  * counts are direct-labeled in ink tokens rather than the bar color.
  */
-export default function CountryBoard({
+export default async function CountryBoard({
   stats,
   limit = 10,
 }: {
   stats: CountryStat[];
   limit?: number;
 }) {
+  const t = await getT();
   if (!stats.length) {
     return (
       <div className="card p-6 text-center text-ash">
-        No countries on the board yet — ship a project and put yours on it.
+        {t("country.empty")}
       </div>
     );
   }
@@ -32,13 +34,15 @@ export default function CountryBoard({
       <div className="p-6 border-b border-line bg-cloud/60">
         <div className="flex items-end justify-between flex-wrap gap-2">
           <div>
-            <div className="section-eyebrow">Dashboard</div>
+            <div className="section-eyebrow">{t("country.dashboard")}</div>
             <h3 className="font-display font-bold text-2xl text-ink mt-1">
-              Top {top.length} countries
+              {t("country.top").replace("{n}", String(top.length))}
             </h3>
           </div>
           <div className="text-sm text-ash">
-            {stats.length} {stats.length === 1 ? "country" : "countries"} · {totalProjects} projects shipped
+            {t(stats.length === 1 ? "country.summaryOne" : "country.summaryMany")
+              .replace("{c}", String(stats.length))
+              .replace("{p}", String(totalProjects))}
           </div>
         </div>
       </div>
@@ -57,15 +61,15 @@ export default function CountryBoard({
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="font-display font-semibold text-ink truncate">{s.country}</span>
                     <span className="text-xs text-ash shrink-0 tabular-nums">
-                      {s.chapters} {s.chapters === 1 ? "chapter" : "chapters"}
+                      {t(s.chapters === 1 ? "country.chapterOne" : "country.chapterMany").replace("{n}", String(s.chapters))}
                     </span>
                   </div>
                   {/* Track + fill. 2px surface gap via the inset track background. */}
                   <div
                     className="mt-2 h-2 w-full rounded-full bg-cloud overflow-hidden"
                     role="img"
-                    aria-label={`${s.country}: ${s.count} projects`}
-                    title={`${s.country} — ${s.count} projects across ${s.chapters} chapters`}
+                    aria-label={`${s.country}: ${s.count}`}
+                    title={`${s.country} — ${s.count}`}
                   >
                     <div
                       className="h-full rounded-full bg-gblue"
@@ -84,7 +88,7 @@ export default function CountryBoard({
 
       {hidden > 0 && (
         <div className="px-6 py-3 border-t border-line bg-cloud/40 text-xs text-ash">
-          + {hidden} more {hidden === 1 ? "country" : "countries"} not shown
+          {t(hidden === 1 ? "country.hiddenOne" : "country.hiddenMany").replace("{n}", String(hidden))}
         </div>
       )}
     </div>

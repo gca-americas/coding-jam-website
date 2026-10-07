@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth } from "@/auth";
+import { getT } from "@/lib/i18n";
 import SignInGate from "@/app/submit/SignInGate";
 import ProjectCard from "@/components/ProjectCard";
 import BadgeCard from "@/components/BadgeCard";
@@ -18,6 +19,7 @@ const BAR_BG: Record<EarnedBadge["color"], string> = {
 };
 
 export default async function MePage() {
+  const t = await getT();
   const session = await auth();
   const user = session?.user;
   const signedIn = Boolean(user?.email);
@@ -70,26 +72,26 @@ export default async function MePage() {
             )}
             <div className="min-w-0">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-line text-xs text-ash shadow-soft">
-                <span className="h-1.5 w-1.5 rounded-full bg-gblue" /> Your builder profile
+                <span className="h-1.5 w-1.5 rounded-full bg-gblue" /> {t("me.eyebrow")}
               </div>
               <h1 className="h-display text-4xl sm:text-5xl mt-3 leading-[1.05]">
-                {user.name ?? "Builder"}
+                {user.name ?? t("me.builder")}
               </h1>
               <Link
                 href={`/u/${profileId}`}
                 className="inline-flex items-center gap-1.5 mt-3 text-sm text-gblue hover:underline"
-                title="Public profile — share this link with anyone."
+                title={t("me.publicTitle")}
               >
-                Share your public profile →
+                {t("me.sharePublic")}
               </Link>
             </div>
           </div>
           <div className="mt-6 grid sm:grid-cols-2 gap-4 max-w-2xl">
-            <Stat n={count} label={count === 1 ? "build shipped" : "builds shipped"} />
+            <Stat n={count} label={count === 1 ? t("me.buildShipped") : t("me.buildsShipped")} />
             <div className="card p-5">
               <div className="flex items-baseline justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-xs text-ash">Current tier</div>
+                  <div className="text-xs text-ash">{t("me.currentTier")}</div>
                   <div className="font-display font-bold text-2xl text-ink mt-0.5 truncate">{tierLabel}</div>
                 </div>
                 {nextLabel && (
@@ -101,8 +103,8 @@ export default async function MePage() {
               </div>
               <div className="text-[11px] text-ash mt-2">
                 {nextBadge
-                  ? `${buildsToNext} ${buildsToNext === 1 ? "build" : "builds"} to unlock`
-                  : "All badges earned ★"}
+                  ? t(buildsToNext === 1 ? "me.toUnlockOne" : "me.toUnlockMany").replace("{n}", String(buildsToNext))
+                  : t("me.allEarned")}
               </div>
             </div>
           </div>
@@ -110,25 +112,24 @@ export default async function MePage() {
       </section>
 
       <section className="container-page py-10">
-        <div className="section-eyebrow">Badges</div>
+        <div className="section-eyebrow">{t("me.badges")}</div>
         <h2 className="font-display font-bold text-2xl text-ink mt-1">
-          Collect them as you ship.
+          {t("me.badges.title")}
         </h2>
         <p className="text-sm text-ash mt-2 max-w-2xl">
-          Every build counts — including ones where you&rsquo;re credited as a collaborator. Each
-          milestone unlocks a Google badge you can claim and add to your profile.
+          {t("me.badges.body")}
         </p>
         <p className="text-sm text-ash mt-2 max-w-2xl">
-          The badges you earn here also show up on your{" "}
+          {t("me.badges.gdp.a")}{" "}
           <a
             href="https://me.developers.google.com/u/me"
             target="_blank"
             rel="noreferrer"
             className="text-gblue hover:underline font-medium"
           >
-            Google Developer Program profile
+            {t("me.badges.gdp.link")}
           </a>
-          {" "}— same Google account you signed in with.
+          {" "}{t("me.badges.gdp.b")}
         </p>
         <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {badges.map((b) => (
@@ -138,15 +139,19 @@ export default async function MePage() {
       </section>
 
       <section className="container-page py-10 pb-20">
-        <div className="section-eyebrow">Your builds</div>
+        <div className="section-eyebrow">{t("me.yourBuilds")}</div>
         <h2 className="font-display font-bold text-2xl text-ink mt-1">
-          {count === 0 ? "Nothing on the board yet." : count === 1 ? "Your first build." : `All ${count} of them.`}
+          {count === 0
+            ? t("me.builds.none")
+            : count === 1
+              ? t("me.builds.one")
+              : t("me.builds.many").replace("{n}", String(count))}
         </h2>
         {count === 0 ? (
           <div className="card p-8 mt-6 text-center">
-            <p className="text-ash">Ship your first jam build to unlock your Builder badge.</p>
+            <p className="text-ash">{t("me.builds.emptyBody")}</p>
             <Link href="/submit" className="btn-google mt-5 inline-flex">
-              Share your build →
+              {t("me.builds.cta")}
             </Link>
           </div>
         ) : (

@@ -1,144 +1,138 @@
 import type { Metadata } from "next";
 import ToolGuideShell from "../ToolGuideShell";
+import { getT } from "@/lib/i18n";
 
-export const metadata: Metadata = {
-  title: "Install Antigravity and set it up for your jam — GDG Coding Jams",
-  description:
-    "An AI-driven IDE on your own machine. The pre-flight checklist and setup guide for builders bringing Antigravity to a Coding Jam.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return { title: t("meta.antigravity.title"), description: t("meta.antigravity.desc") };
+}
 
-export default function AntigravityGuidePage() {
+export default async function AntigravityGuidePage() {
+  const t = await getT();
   return (
     <ToolGuideShell
-      eyebrow="Tool guide"
+      eyebrow={t("guide.eyebrow")}
       emoji="🚀"
       title="Antigravity"
-      tagline="Your editor, your terminal, your repo — with the agent doing the typing."
-      forWhom="For people who already write code and have a working dev setup on the laptop they're bringing."
+      tagline={t("ag.tagline")}
+      forWhom={t("ag.forWhom")}
       accent="bg-gred"
       codelab={{
         href: "https://codelabs.developers.google.com/codelabs/coding-jam/instructions#0",
-        heading: "Follow the codelab.",
-        blurb:
-          "Zero to a working app in about an hour, one step at a time. It walks you through Setup, Plan, Review, Build, API and Verify — you direct the agent, it does the typing.",
+        heading: t("ag.codelab.heading"),
+        blurb: t("ag.codelab.blurb"),
       }}
       checklist={[
         {
-          heading: "Install these",
-          note: "Required — the session assumes all three are working.",
+          heading: t("guide.installThese"),
+          note: t("ag.install.note"),
           items: [
             {
               title: "Antigravity",
               color: "bg-gblue",
-              body: "The Jam runs on Antigravity — without it you can't follow the codelab. It's a sizeable download, so do it before the day rather than on venue wifi.",
-              link: { href: "https://antigravity.google/download", label: "Download Antigravity" },
+              body: t("ag.install.1.body"),
+              link: { href: "https://antigravity.google/download", label: t("ag.install.1.link") },
             },
             {
-              title: "Git, and a GitHub account",
+              title: t("ag.install.2.title"),
               color: "bg-gred",
-              body: "Every starter is a GitHub repo you clone during setup. Check you can actually clone something — an unconfigured SSH key is the classic five-minutes-lost moment.",
+              body: t("ag.install.2.body"),
             },
             {
-              title: "A Google account, for the Gemini API",
+              title: t("ag.install.3.title"),
               color: "bg-gyellow",
-              body: "You'll create an API key at ai.google.dev. The free tier covers a two-hour session comfortably. Use the same account you'll share your build with afterwards.",
+              body: t("ag.install.3.body"),
             },
           ],
         },
         {
-          heading: "Worth having",
-          note: "Not required on the day — the codelab covers uv, and the rest just smooth things out.",
+          heading: t("guide.worthHaving"),
+          note: t("ag.worth.note"),
           items: [
             {
               title: "uv",
               color: "bg-gblue",
-              body: "The Python package manager the starters use — it replaces pip and venv, and installs the right Python for you if you haven't got one. The codelab walks you through it, so you can also leave this until the day.",
-              link: { href: "https://astral.sh/uv", label: "Install uv" },
+              body: t("ag.worth.1.body"),
+              link: { href: "https://astral.sh/uv", label: t("ag.worth.1.link") },
             },
             {
-              title: "Node.js 20+ and npm",
+              title: t("ag.worth.2.title"),
               color: "bg-gred",
-              body: "Not needed for the Python backend, but the frontend-heavy tracks are easier with it, and most JS tooling assumes it. Check with node -v — if that prints a version you're already set.",
+              body: t("ag.worth.2.body"),
             },
             {
-              title: "A terminal you're comfortable in",
+              title: t("ag.worth.3.title"),
               color: "bg-gyellow",
-              body: "You'll run a handful of commands. Whatever you already use is the right one — the jam doesn't care which shell.",
+              body: t("ag.worth.3.body"),
             },
             {
-              title: "Room on disk",
+              title: t("ag.worth.4.title"),
               color: "bg-ggreen",
-              body: "A couple of GB free for the IDE and its dependencies. Worth checking before the day rather than discovering it mid-install.",
+              body: t("ag.worth.4.body"),
             },
           ],
         },
       ]}
       steps={[
         {
-          title: "Claim your credits",
-          body:
-            "Your instructor shares the claim link on the day — it isn't public. Open it with your Gmail account, not a work or school one: the credits attach to whichever Google identity you claim with, and a managed account often can't accept them. If you haven't joined the Google Developer Program before, it'll ask you to join first. That's free and takes a minute.",
+          title: t("ag.step1.title"),
+          body: t("ag.step1.body"),
           media: {
             src: "/guides/antigravity/01-claim-credits.gif",
-            alt: "Claiming the credits, including the Join the Google Developer Program prompt",
+            alt: t("ag.step1.alt"),
             kind: "GIF",
           },
         },
         {
-          title: "Create a Google Cloud project and attach billing",
-          body:
-            "Make a fresh project for the jam rather than reusing one — it keeps the credits, quotas and any mess separate from whatever else you run. Then attach the billing account your credits landed in, or nothing you do next will bill against them.",
+          title: t("ag.step2.title"),
+          body: t("ag.step2.body"),
           href: "https://console.cloud.google.com/projectcreate",
           media: {
             src: "/guides/antigravity/02-create-project-billing.gif",
-            alt: "Creating the project, then attaching the billing account",
+            alt: t("ag.step2.alt"),
             kind: "GIF",
           },
         },
         {
-          title: "Enable Agent Platform",
-          body:
-            "Open Agent Platform on your new project and hit Enable at the top of the page. Nothing downstream works until this is on, and it's the step that most often gets skipped.",
+          title: t("ag.step3.title"),
+          body: t("ag.step3.body"),
           href: "https://console.cloud.google.com/agent-platform/overview",
           media: {
             src: "/guides/antigravity/03-enable-agent-platform.gif",
-            alt: "Hitting Enable at the top of the Agent Platform overview",
+            alt: t("ag.step3.alt"),
             kind: "GIF",
           },
         },
         {
-          title: "Copy your project ID",
-          body:
-            "The project ID, not the display name — they're usually different, and only the ID works. You'll paste it into Antigravity in a moment.",
+          title: t("ag.step4.title"),
+          body: t("ag.step4.body"),
           media: {
             src: "/guides/antigravity/04-copy-project-id.gif",
-            alt: "Copying the project ID from the Cloud Console",
+            alt: t("ag.step4.alt"),
             kind: "GIF",
           },
         },
         {
-          title: "Open Antigravity — sign in with Google Cloud",
-          body:
-            "This is the step people miss. On the welcome screen, choose the Google Cloud project option rather than your personal Google account, so the session runs against the project your credits are in.",
+          title: t("ag.step5.title"),
+          body: t("ag.step5.body"),
           media: {
             src: "/guides/antigravity/05-antigravity-use-gcp.gif",
-            alt: "Choosing Google Cloud project on the Antigravity welcome screen",
+            alt: t("ag.step5.alt"),
             kind: "GIF",
           },
         },
         {
-          title: "Paste your project ID",
-          body:
-            "Paste the ID you copied in step 4. Antigravity connects to that project, and you're ready to build.",
+          title: t("ag.step6.title"),
+          body: t("ag.step6.body"),
           media: {
             src: "/guides/antigravity/06-paste-project-id.gif",
-            alt: "Pasting the project ID into Antigravity",
+            alt: t("ag.step6.alt"),
             kind: "GIF",
           },
         },
       ]}
       otherHref="/tools/ai-studio"
-      otherLabel="🎨 I'd rather use AI Studio"
+      otherLabel={`🎨 ${t("guide.ratherAiStudio")}`}
     />
   );
 }

@@ -59,4 +59,3 @@ export const auth: typeof nextAuth.auth = (async (...args: Parameters<typeof nex
   }
   return session;
 }) as typeof nextAuth.auth;
-

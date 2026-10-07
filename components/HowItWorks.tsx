@@ -17,38 +17,16 @@ const dotBg: Record<Step["color"], string> = {
   green: "bg-ggreen",
 };
 
+/** Keys, not prose — the copy prop resolves them per locale. */
 const steps: Step[] = [
-  {
-    emoji: "🍕",
-    time: "0:00",
-    title: "Show up",
-    body: "Bring a laptop. No prep, no prior project. The room handles the rest.",
-    color: "blue",
-  },
-  {
-    emoji: "🎬",
-    time: "10 min",
-    title: "Pick a topic",
-    body: "Your chapter has one for the week, or you bring your own idea. Two minutes of deciding what you're making.",
-    color: "red",
-  },
-  {
-    emoji: "🚀",
-    time: "75 min",
-    title: "Build together",
-    body: "AI does the typing; you direct it. Everyone's building at once, so the person next to you is the fastest way past a wall.",
-    color: "yellow",
-  },
-  {
-    emoji: "🎤",
-    time: "Walk out",
-    title: "Share what you made",
-    body: "Two minutes each, screen-shared from your seat. Then it goes on the showcase — half-finished is welcome.",
-    color: "green",
-  },
+  { emoji: "🍕", time: "hiw.1.time", title: "hiw.1.title", body: "hiw.1.body", color: "blue" },
+  { emoji: "🎬", time: "hiw.2.time", title: "hiw.2.title", body: "hiw.2.body", color: "red" },
+  { emoji: "🚀", time: "hiw.3.time", title: "hiw.3.title", body: "hiw.3.body", color: "yellow" },
+  { emoji: "🎤", time: "hiw.4.time", title: "hiw.4.title", body: "hiw.4.body", color: "green" },
 ];
 
-export default function HowItWorks() {
+export default function HowItWorks({ copy }: { copy?: Record<string, string> }) {
+  const t = (k: string) => copy?.[k] ?? k;
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleSet, setVisibleSet] = useState<Set<number>>(new Set());
 
@@ -77,12 +55,12 @@ export default function HowItWorks() {
 
   return (
     <section className="container-page py-20">
-      <div className="section-eyebrow">How a jam works</div>
+      <div className="section-eyebrow">{t("hiw.eyebrow")}</div>
       <h2 className="h-display text-3xl sm:text-4xl mt-2 max-w-2xl">
-        Four beats, and you&rsquo;re out with a working app.
+        {t("hiw.title")}
       </h2>
       <p className="text-ash mt-3 max-w-xl">
-        No prep required. No prior project. Drop in to any track on any week.
+        {t("hiw.lede")}
       </p>
 
       <div
@@ -105,12 +83,12 @@ export default function HowItWorks() {
                 <span className={`h-1.5 w-10 rounded-full ${dotBg[s.color]}`} />
               </div>
               <div className="mt-5 text-xs font-mono uppercase tracking-widest text-ash">
-                {s.time}
+                {t(s.time)}
               </div>
               <div className="font-display font-semibold text-ink text-xl mt-1">
-                {s.title}
+                {t(s.title)}
               </div>
-              <p className="text-sm text-ash mt-2 leading-relaxed flex-1">{s.body}</p>
+              <p className="text-sm text-ash mt-2 leading-relaxed flex-1">{t(s.body)}</p>
             </div>
           );
         })}

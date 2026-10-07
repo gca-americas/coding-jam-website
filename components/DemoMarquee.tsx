@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { TRACKS, colorClasses, trackLabel } from "@/lib/tracks";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Infinite horizontal marquee of all 8 demo videos.
@@ -20,7 +21,8 @@ export default function DemoMarquee({
 }: {
   durationSeconds?: number;
 }) {
-  const tracks = TRACKS.filter((t) => t.youtubeId);
+  const t = useT();
+  const tracks = TRACKS.filter((t) => t.video?.youtubeId);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export default function DemoMarquee({
     };
   }, [activeId]);
 
-  const activeTrack = activeId ? tracks.find((t) => t.youtubeId === activeId) : null;
+  const activeTrack = activeId ? tracks.find((t) => t.video?.youtubeId === activeId) : null;
 
   return (
     <>
@@ -64,7 +66,7 @@ export default function DemoMarquee({
             <Card
               key={`${t.slug}-${i}`}
               track={t}
-              onOpen={() => setActiveId(t.youtubeId ?? null)}
+              onOpen={() => setActiveId(t.video?.youtubeId ?? null)}
             />
           ))}
         </div>
@@ -76,15 +78,15 @@ export default function DemoMarquee({
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8"
           role="dialog"
           aria-modal="true"
-          aria-label={`${activeTrack.project} demo`}
+          aria-label={`${activeTrack.name} demo`}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             className="relative w-full max-w-5xl aspect-video rounded-2xl overflow-hidden shadow-2xl bg-black"
           >
             <iframe
-              src={`https://www.youtube-nocookie.com/embed/${activeTrack.youtubeId}?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1&rel=0&playsinline=1`}
-              title={`${activeTrack.project} demo`}
+              src={`https://www.youtube-nocookie.com/embed/${activeTrack.video?.youtubeId}?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1&rel=0&playsinline=1`}
+              title={`${activeTrack.name} demo`}
               allow="autoplay; encrypted-media; picture-in-picture"
               allowFullScreen
               className="absolute inset-0 w-full h-full"
@@ -92,14 +94,14 @@ export default function DemoMarquee({
             <button
               type="button"
               onClick={() => setActiveId(null)}
-              aria-label="Close video"
+              aria-label={t("dm.close")}
               className="absolute top-3 right-3 h-9 w-9 rounded-full bg-white/90 hover:bg-white text-ink flex items-center justify-center font-bold shadow-lift z-10"
             >
               ×
             </button>
             <div className="absolute bottom-3 left-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/70 text-white text-xs backdrop-blur-sm">
               <span className="h-1.5 w-1.5 rounded-full bg-gred animate-pulse" />
-              Track {trackLabel(activeTrack.number)} · {activeTrack.project}
+              Track {activeTrack.number !== undefined ? trackLabel(activeTrack.number) : ''} · {activeTrack.name}
             </div>
           </div>
         </div>
@@ -125,8 +127,8 @@ function Card({
       <div className="relative aspect-video bg-cloud">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={`https://i.ytimg.com/vi/${track.youtubeId}/hqdefault.jpg`}
-          alt={`${track.project} demo poster`}
+          src={`https://i.ytimg.com/vi/${track.video?.youtubeId}/hqdefault.jpg`}
+          alt={`${track.name} demo poster`}
           loading="lazy"
           className="absolute inset-0 w-full h-full object-cover"
         />
@@ -139,10 +141,10 @@ function Card({
 
       <div className="p-4 text-left">
         <div className={`text-[11px] font-mono font-semibold tracking-widest uppercase ${c.text}`}>
-          Track {trackLabel(track.number)}
+          Track {track.number !== undefined ? trackLabel(track.number) : ''}
         </div>
         <div className="font-display font-bold text-lg mt-1 leading-tight text-ink">
-          {track.project}
+          {track.name}
         </div>
       </div>
       <div className={`h-1 ${c.bg}`} />

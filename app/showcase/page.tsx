@@ -6,6 +6,8 @@ import { listProjects, chapterStats, countryStats, jamOptions } from "@/lib/proj
 import { TRACKS, trackLabel } from "@/lib/tracks";
 import ShowcaseFilters from "./ShowcaseFilters";
 import Pagination from "@/components/Pagination";
+import { getCopy, getT } from "@/lib/i18n";
+import { localizeTracks } from "@/lib/i18n/tracks";
 
 type SP = {
   track?: string;
@@ -30,6 +32,8 @@ function cleanDate(v: string | undefined): string {
 }
 
 export default async function ShowcasePage({ searchParams }: { searchParams: Promise<SP> }) {
+  const t = await getT();
+  const filterCopy = await getCopy(["sc."]);
   const sp = await searchParams;
   const all = await listProjects();
   const stats = chapterStats(all);
@@ -67,7 +71,9 @@ export default async function ShowcasePage({ searchParams }: { searchParams: Pro
   const pageStart = (page - 1) * PAGE_SIZE;
   const pageProjects = projects.slice(pageStart, pageStart + PAGE_SIZE);
 
-  const activeTrack = trackFilter ? TRACKS.find((t) => t.number === trackFilter) : null;
+  const activeTrack = trackFilter
+    ? (await localizeTracks(TRACKS)).find((tr) => tr.number === trackFilter)
+    : null;
 
   return (
     <>
@@ -75,18 +81,17 @@ export default async function ShowcasePage({ searchParams }: { searchParams: Pro
         <div className="absolute inset-0 diag-bg" />
         <div className="container-page relative py-16 sm:py-20">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-line text-xs text-ash shadow-soft">
-            <span className="h-1.5 w-1.5 rounded-full bg-gyellow" /> Community showcase
+            <span className="h-1.5 w-1.5 rounded-full bg-gyellow" /> {t("sc.eyebrow")}
           </div>
           <h1 className="h-display text-5xl sm:text-6xl mt-6 max-w-3xl leading-[1.05]">
-            What the rooms <span className="gradient-text">shipped.</span>
+            {t("sc.title.a")} <span className="gradient-text">{t("sc.title.b")}</span>
           </h1>
           <p className="mt-5 text-lg text-ash max-w-2xl">
-            Real builds from real GDG chapters. Two hours, one pizza, one prototype. Search by name, narrow to a
-            GDG group or a date range — or scroll until something makes you want to fork it.
+            {t("sc.lede")}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/submit" className="btn-google">Share your build →</Link>
-            <Link href="/showcase" className="btn-ghost">All builds</Link>
+            <Link href="/submit" className="btn-google">{t("sc.cta.share")}</Link>
+            <Link href="/showcase" className="btn-ghost">{t("sc.cta.all")}</Link>
           </div>
         </div>
       </section>
@@ -94,6 +99,7 @@ export default async function ShowcasePage({ searchParams }: { searchParams: Pro
       <section className="container-page py-12 grid lg:grid-cols-5 gap-10 items-start">
         <aside className="lg:col-span-2 space-y-6 lg:sticky lg:top-24">
           <ShowcaseFilters
+            copy={filterCopy}
             chapters={stats.map((c) => ({ chapter: c.chapter, count: c.count }))}
             jams={jams}
             initial={{
@@ -115,26 +121,31 @@ export default async function ShowcasePage({ searchParams }: { searchParams: Pro
             <div>
               <div className="section-eyebrow">
                 {[
-                  activeTrack ? `Track ${trackLabel(activeTrack.number)} · ${activeTrack.project}` : null,
+                  activeTrack ? activeTrack.name : null,
                   chapterFilter,
                   activeJam ? activeJam.title : jamFilter,
                   nameQuery ? `“${nameQuery}”` : null,
-                  fromDate || toDate ? `${fromDate || "the start"} → ${toDate || "today"}` : null,
+                  fromDate || toDate
+                    ? `${fromDate || t("sc.range.start")} → ${toDate || t("sc.range.today")}`
+                    : null,
                 ]
                   .filter(Boolean)
-                  .join(" · ") || "All builds"}
+                  .join(" · ") || t("sc.allBuilds")}
               </div>
               <h2 className="h-display text-2xl mt-1">
                 {total === 0
-                  ? "No projects"
+                  ? t("sc.noProjects")
                   : total <= PAGE_SIZE
-                    ? `${total} ${total === 1 ? "project" : "projects"}`
-                    : `Showing ${pageStart + 1}–${Math.min(pageStart + PAGE_SIZE, total)} of ${total}`}
+                    ? t(total === 1 ? "sc.countOne" : "sc.countMany").replace("{n}", String(total))
+                    : t("jams.showing")
+                        .replace("{start}", String(pageStart + 1))
+                        .replace("{end}", String(Math.min(pageStart + PAGE_SIZE, total)))
+                        .replace("{total}", String(total))}
               </h2>
             </div>
             {anyFilter && (
               <Link href="/showcase" className="text-sm text-gblue hover:underline">
-                ← Clear filters
+                {t("sc.clearFiltersArrow")}
               </Link>
             )}
           </div>
@@ -143,17 +154,15 @@ export default async function ShowcasePage({ searchParams }: { searchParams: Pro
             <div className="card p-10 text-center">
               <div className="text-3xl">{anyFilter ? "🔍" : "🎤"}</div>
               <h3 className="font-display font-semibold text-ink mt-3">
-                {anyFilter ? "Nothing matches those filters" : "No builds here yet"}
+                {anyFilter ? t("sc.empty.filtered") : t("sc.empty.none")}
               </h3>
               <p className="text-sm text-ash mt-2">
-                {anyFilter
-                  ? "Try a different name, group, or date range."
-                  : "Be the first to ship one — your GDG could go on the hero board."}
+                {anyFilter ? t("sc.empty.filteredBody") : t("sc.empty.noneBody")}
               </p>
               {anyFilter ? (
-                <Link href="/showcase" className="btn-ghost mt-4 inline-flex">Clear filters</Link>
+                <Link href="/showcase" className="btn-ghost mt-4 inline-flex">{t("sc.clearFilters")}</Link>
               ) : (
-                <Link href="/submit" className="btn-google mt-4 inline-flex">Share your build →</Link>
+                <Link href="/submit" className="btn-google mt-4 inline-flex">{t("sc.cta.share")}</Link>
               )}
             </div>
           ) : (
@@ -167,7 +176,7 @@ export default async function ShowcasePage({ searchParams }: { searchParams: Pro
                 page={page}
                 totalPages={totalPages}
                 href={(n) => pageHref(n, sp)}
-                label="Showcase pagination"
+                label={t("sc.pagination")}
               />
             </>
           )}

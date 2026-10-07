@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { PublicProject } from "@/lib/projects";
+import { useT } from "@/lib/i18n/client";
 import ProjectCard from "@/components/ProjectCard";
 
 /**
@@ -11,13 +12,14 @@ import ProjectCard from "@/components/ProjectCard";
  * builds the signed-in user submitted (not ones they're only credited on).
  */
 export default function OwnerProjectCard({ project }: { project: PublicProject }) {
+  const t = useT();
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   async function onDelete() {
-    if (!window.confirm(`Delete "${project.projectName}"? This can't be undone.`)) return;
+    if (!window.confirm(t("opc.confirm").replace("{name}", project.projectName))) return;
     setError(null);
     setDeleting(true);
     try {
@@ -40,7 +42,7 @@ export default function OwnerProjectCard({ project }: { project: PublicProject }
         <Link
           href={`/me/edit/${project.id}`}
           className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/95 border border-line text-ink hover:bg-white shadow-soft"
-          title="Edit this build"
+          title={t("opc.edit")}
         >
           Edit
         </Link>
@@ -49,7 +51,7 @@ export default function OwnerProjectCard({ project }: { project: PublicProject }
           onClick={onDelete}
           disabled={deleting || pending}
           className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/95 border border-line text-gred hover:bg-gred hover:text-white shadow-soft disabled:opacity-60"
-          title="Delete this build"
+          title={t("opc.delete")}
         >
           {deleting ? "Deleting…" : "Delete"}
         </button>

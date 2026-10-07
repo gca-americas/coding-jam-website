@@ -22,41 +22,43 @@ import Link from "next/link";
 
 type Tool = "ai-studio" | "antigravity";
 
+export type PickerCopy = Record<string, string>;
+
 const QUESTIONS: Array<{
   topic: string;
   q: string;
   answers: Array<{ label: string; tool: Tool }>;
 }> = [
   {
-    topic: "Your setup",
-    q: "What's on the laptop you'll bring?",
+    topic: "tools.q1.topic",
+    q: "tools.q1.q",
     answers: [
-      { label: "A browser. That's how I like to work.", tool: "ai-studio" },
-      { label: "An editor, a terminal and Git — all set up and in use.", tool: "antigravity" },
+      { label: "tools.q1.a1", tool: "ai-studio" },
+      { label: "tools.q1.a2", tool: "antigravity" },
     ],
   },
   {
-    topic: "Installing things",
-    q: "Antigravity is a desktop IDE. Where do you stand?",
+    topic: "tools.q2.topic",
+    q: "tools.q2.q",
     answers: [
-      { label: "I'd rather not install anything — browser only, please.", tool: "ai-studio" },
-      { label: "Already have it, or happy to install it before the jam.", tool: "antigravity" },
+      { label: "tools.q2.a1", tool: "ai-studio" },
+      { label: "tools.q2.a2", tool: "antigravity" },
     ],
   },
   {
-    topic: "How you'd rather work",
-    q: "Building the thing itself — what sounds better?",
+    topic: "tools.q3.topic",
+    q: "tools.q3.q",
     answers: [
-      { label: "Describe what I want, then shape what comes back.", tool: "ai-studio" },
-      { label: "Keep my own project and let the agent edit files in it.", tool: "antigravity" },
+      { label: "tools.q3.a1", tool: "ai-studio" },
+      { label: "tools.q3.a2", tool: "antigravity" },
     ],
   },
   {
-    topic: "After the jam",
-    q: "What do you want to walk out with?",
+    topic: "tools.q4.topic",
+    q: "tools.q4.q",
     answers: [
-      { label: "Something live I can send people a link to.", tool: "ai-studio" },
-      { label: "A repo on my machine I can keep building on.", tool: "antigravity" },
+      { label: "tools.q4.a1", tool: "ai-studio" },
+      { label: "tools.q4.a2", tool: "antigravity" },
     ],
   },
 ];
@@ -77,33 +79,26 @@ const RESULTS: Record<
     name: "Google AI Studio",
     href: "/tools/ai-studio",
     emoji: "🎨",
-    verdict: "Bring a browser. That's it.",
+    verdict: "tools.aiStudio.verdict",
     blurb:
-      "Nothing to install, nothing to break on the night. You describe what you want and shape what comes back.",
-    bullets: [
-      "Zero setup — open a tab and start building",
-      "Prompt-first: describe it, refine it, ship it",
-      "Right when the idea matters more than the plumbing",
-    ],
+      "tools.aiStudio.blurb",
+    bullets: ["tools.aiStudio.b1", "tools.aiStudio.b2", "tools.aiStudio.b3"],
     dot: "bg-gblue",
   },
   antigravity: {
     name: "Antigravity",
     href: "/tools/antigravity",
     emoji: "🚀",
-    verdict: "Bring the laptop you already work on.",
+    verdict: "tools.antigravity.verdict",
     blurb:
-      "An AI-driven IDE on your own machine. Your editor, your terminal, your repo — with the agent doing the typing.",
-    bullets: [
-      "Runs locally against a real project you can commit",
-      "You direct and review; the agent types",
-      "Right when you already have a dev setup you like",
-    ],
+      "tools.antigravity.blurb",
+    bullets: ["tools.antigravity.b1", "tools.antigravity.b2", "tools.antigravity.b3"],
     dot: "bg-gred",
   },
 };
 
-export default function ToolPicker() {
+export default function ToolPicker({ copy }: { copy: PickerCopy }) {
+  const c = (k: string) => copy[k] ?? k;
   const [picks, setPicks] = useState<Tool[]>([]);
   const step = picks.length;
   const done = step >= QUESTIONS.length;
@@ -123,13 +118,12 @@ export default function ToolPicker() {
       <div className="grid md:grid-cols-[1fr,1.25fr]">
         {/* Left: the framing */}
         <div className="p-8 sm:p-10 bg-cloud/50 border-b md:border-b-0 md:border-r border-line flex flex-col">
-          <div className="section-eyebrow">Right tool, right job</div>
+          <div className="section-eyebrow">{c("tools.eyebrow")}</div>
           <h2 className="h-display text-2xl sm:text-3xl mt-2 leading-tight">
-            Two tools. Two very different afternoons.
+            {c("tools.title")}
           </h2>
           <p className="text-ash mt-3">
-            Neither is the beginner option. It comes down to what&rsquo;s already on your laptop, and
-            whether you want a desktop IDE at all. Four questions, then bring the one that fits.
+            {c("tools.lede")}
           </p>
 
           {/* Lean meter */}
@@ -147,21 +141,21 @@ export default function ToolPicker() {
             </div>
             <div className="text-[11px] text-ash mt-2 tabular-nums">
               {step === 0
-                ? "Undecided — answer the first question."
+                ? c("tools.undecided")
                 : done
-                  ? `${maker}–${coder} after four questions.`
-                  : `${step} of ${QUESTIONS.length} answered.`}
+                  ? c("tools.tally").replace("{a}", String(maker)).replace("{b}", String(coder))
+                  : c("tools.answered").replace("{n}", String(step)).replace("{total}", String(QUESTIONS.length))}
             </div>
           </div>
 
           <div className="mt-auto pt-8 text-sm">
-            <p className="text-ash">Already know which one you want?</p>
+            <p className="text-ash">{c("tools.known")}</p>
             <div className="flex flex-wrap gap-2 mt-2">
               <Link href="/tools/ai-studio" className="btn-ghost !py-2 !px-3 text-sm">
-                🎨 Set up AI Studio
+                🎨 {c("tools.setupAiStudio")}
               </Link>
               <Link href="/tools/antigravity" className="btn-ghost !py-2 !px-3 text-sm">
-                🚀 Set up Antigravity
+                🚀 {c("tools.setupAntigravity")}
               </Link>
             </div>
           </div>
@@ -183,10 +177,10 @@ export default function ToolPicker() {
               </div>
 
               <div className="text-[11px] font-mono uppercase tracking-widest text-ash mt-4">
-                {QUESTIONS[step].topic}
+                {c(QUESTIONS[step].topic)}
               </div>
               <h3 className="font-display font-bold text-2xl text-ink mt-1.5 leading-snug">
-                {QUESTIONS[step].q}
+                {c(QUESTIONS[step].q)}
               </h3>
 
               <div className="mt-5 space-y-2.5">
@@ -198,7 +192,7 @@ export default function ToolPicker() {
                     className="group w-full text-left px-4 py-3.5 rounded-xl border border-line bg-white hover:border-ink hover:shadow-soft transition-all text-ink flex items-center gap-3"
                   >
                     <span className="h-2 w-2 rounded-full bg-line group-hover:bg-ink transition-colors shrink-0" />
-                    <span className="flex-1">{a.label}</span>
+                    <span className="flex-1">{c(a.label)}</span>
                     <span className="text-ash opacity-0 group-hover:opacity-100 transition-opacity">→</span>
                   </button>
                 ))}
@@ -210,14 +204,14 @@ export default function ToolPicker() {
                   onClick={() => setPicks((p) => p.slice(0, -1))}
                   className="text-xs text-ash hover:text-ink mt-5 self-start"
                 >
-                  ← Previous question
+                  {c("tools.prev")}
                 </button>
               )}
             </>
           ) : (
             <div>
               <div className="text-[11px] font-mono uppercase tracking-widest text-ash">
-                {landslide ? "No contest" : "Your call, but"}
+                {landslide ? c("tools.noContest") : c("tools.yourCall")}
               </div>
               <div className="flex items-start gap-4 mt-3">
                 <span className="text-5xl leading-none">{result.emoji}</span>
@@ -225,39 +219,39 @@ export default function ToolPicker() {
                   <div className="font-display font-bold text-3xl text-ink leading-tight">
                     {result.name}
                   </div>
-                  <p className="text-ink font-medium mt-1">{result.verdict}</p>
+                  <p className="text-ink font-medium mt-1">{c(result.verdict)}</p>
                 </div>
               </div>
-              <p className="text-sm text-ash mt-3">{result.blurb}</p>
+              <p className="text-sm text-ash mt-3">{c(result.blurb)}</p>
 
               <ul className="mt-4 space-y-1.5">
                 {result.bullets.map((b) => (
                   <li key={b} className="text-sm text-ink flex gap-2.5">
                     <span className={`mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 ${result.dot}`} />
-                    {b}
+                    {c(b)}
                   </li>
                 ))}
               </ul>
 
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <Link href={result.href} className="btn-google !py-2 !px-4 text-sm">
-                  Set it up for your jam →
+                  {c("tools.setupCta")}
                 </Link>
                 <button
                   type="button"
                   onClick={() => setPicks([])}
                   className="text-sm text-ash hover:text-ink"
                 >
-                  Play again
+                  {c("tools.playAgain")}
                 </button>
               </div>
 
               <p className="text-xs text-ash mt-5">
-                Close call? Nothing here is binding —{" "}
+                {c("tools.closeCall.a")}{" "}
                 <Link href={other.href} className="text-gblue hover:underline">
-                  read the {other.name} guide
+                  {c("tools.closeCall.link").replace("{name}", other.name)}
                 </Link>{" "}
-                and bring whichever sounds more like your kind of evening.
+                {c("tools.closeCall.b")}
               </p>
             </div>
           )}

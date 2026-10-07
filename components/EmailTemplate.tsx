@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * A copyable email draft in a dialog.
@@ -30,8 +31,10 @@ export default function EmailTemplate({
   to?: string;
   subject: string;
   body: string;
-  variant?: "ghost" | "google";
+  /** "hero" is the large, high-contrast form for a page's primary call to action. */
+  variant?: "ghost" | "google" | "hero";
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(body);
   const [draftSubject, setDraftSubject] = useState(subject);
@@ -74,7 +77,13 @@ export default function EmailTemplate({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={variant === "google" ? "btn-google !py-2 !px-4 text-sm" : "btn-ghost !py-2 !px-4 text-sm"}
+        className={
+          variant === "hero"
+            ? "btn bg-ink text-white hover:shadow-pop text-base sm:text-lg !px-7 !py-4 font-semibold shadow-lift"
+            : variant === "google"
+              ? "btn-google !py-2 !px-4 text-sm"
+              : "btn-ghost !py-2 !px-4 text-sm"
+        }
       >
         {label}
       </button>
@@ -143,7 +152,7 @@ export default function EmailTemplate({
 
               <label className="block">
                 <span className="block text-xs text-ash">
-                  Body — edit anything in square brackets before sending
+                  {t("email.bodyLabel")}
                 </span>
                 <textarea
                   value={draft}
@@ -154,23 +163,30 @@ export default function EmailTemplate({
               </label>
             </div>
 
-            <div className="p-6 border-t border-line flex flex-wrap items-center gap-3">
-              <button type="button" onClick={() => copy("body")} className="btn-google !py-2 !px-4 text-sm">
-                {copied === "body" ? "Copied ✓" : "Copy the email"}
-              </button>
-              <a href={mailto} className="btn-ghost !py-2 !px-4 text-sm">
-                Open in mail app
-              </a>
-              <button
-                type="button"
-                onClick={() => {
-                  setDraft(body);
-                  setDraftSubject(subject);
-                }}
-                className="text-sm text-ash hover:text-ink ml-auto"
-              >
-                Reset to template
-              </button>
+            {/* Opening the draft is the primary action: nothing is sent from
+                here, and the button that looks primary should be the one that
+                actually moves you forward. Copy is the fallback for anyone
+                without a mail client wired to mailto:. */}
+            <div className="p-6 border-t border-line space-y-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <a href={mailto} className="btn-google !py-2 !px-4 text-sm">
+                  {t("email.openMail")}
+                </a>
+                <button type="button" onClick={() => copy("body")} className="btn-ghost !py-2 !px-4 text-sm">
+                  {copied === "body" ? t("sf.copied") : t("email.copy")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraft(body);
+                    setDraftSubject(subject);
+                  }}
+                  className="text-sm text-ash hover:text-ink ml-auto"
+                >
+                  {t("email.reset")}
+                </button>
+              </div>
+              <p className="text-xs text-ash leading-relaxed">{t("email.noApp")}</p>
             </div>
           </div>
         </div>

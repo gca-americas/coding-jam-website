@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/lib/i18n/client";
 
 export type JamFilterState = {
   q: string;
@@ -33,6 +34,7 @@ export default function JamsFilters({
   initial: JamFilterState;
   resultCount: number;
 }) {
+  const t = useT();
   const router = useRouter();
   const [f, setF] = useState<JamFilterState>(initial);
 
@@ -66,20 +68,20 @@ export default function JamsFilters({
     <div className="card p-5 sm:p-6">
       <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
         <label className="block lg:col-span-1">
-          <span className="block text-xs text-ash">Search</span>
+          <span className="block text-xs text-ash">{t("jf.search")}</span>
           <input
             type="search"
             value={f.q}
             onChange={(e) => set({ q: e.target.value })}
-            placeholder="Jam or topic name…"
+            placeholder={t("jf.searchPlaceholder")}
             className="input mt-1"
           />
         </label>
 
         <label className="block">
-          <span className="block text-xs text-ash">Country</span>
+          <span className="block text-xs text-ash">{t("home.jams.country")}</span>
           <select value={f.country} onChange={(e) => set({ country: e.target.value })} className="input mt-1">
-            <option value="">All countries</option>
+            <option value="">{t("home.jams.allCountries")}</option>
             {countries.map((c) => (
               <option key={c.name} value={c.name}>
                 {c.name} ({c.count})
@@ -89,9 +91,9 @@ export default function JamsFilters({
         </label>
 
         <label className="block">
-          <span className="block text-xs text-ash">GDG group</span>
+          <span className="block text-xs text-ash">{t("sc.group")}</span>
           <select value={f.chapter} onChange={(e) => set({ chapter: e.target.value })} className="input mt-1">
-            <option value="">All groups</option>
+            <option value="">{t("sc.allGroups")}</option>
             {chapters.map((c) => (
               <option key={c.name} value={c.name}>
                 {c.name} ({c.count})
@@ -101,26 +103,26 @@ export default function JamsFilters({
         </label>
 
         <label className="block">
-          <span className="block text-xs text-ash">From</span>
+          <span className="block text-xs text-ash">{t("home.jams.from")}</span>
           <input
             type="date"
             value={f.from}
             max={f.to || undefined}
             onChange={(e) => set({ from: e.target.value })}
             className="input mt-1"
-            aria-label="Jams on or after"
+            aria-label={t("home.jams.onAfter")}
           />
         </label>
 
         <label className="block">
-          <span className="block text-xs text-ash">To</span>
+          <span className="block text-xs text-ash">{t("home.jams.to")}</span>
           <input
             type="date"
             value={f.to}
             min={f.from || undefined}
             onChange={(e) => set({ to: e.target.value })}
             className="input mt-1"
-            aria-label="Jams on or before"
+            aria-label={t("home.jams.onBefore")}
           />
         </label>
       </div>
@@ -129,15 +131,15 @@ export default function JamsFilters({
         <div className="mt-4 flex items-center gap-3 text-sm">
           <span className="text-ash">
             {resultCount === 0
-              ? "No jams match."
-              : `${resultCount} jam${resultCount === 1 ? "" : "s"} match.`}
+              ? t("home.jams.noMatch")
+              : t(resultCount === 1 ? "jf.matchOne" : "jf.matchMany").replace("{n}", String(resultCount))}
           </span>
           <button
             type="button"
             onClick={() => setF({ q: "", country: "", chapter: "", from: "", to: "" })}
             className="text-gblue hover:underline"
           >
-            Clear filters
+            {t("sc.clearFilters")}
           </button>
         </div>
       )}

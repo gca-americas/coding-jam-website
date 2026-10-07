@@ -10,6 +10,9 @@
 /** Where GDG organizers in the Americas request Google Cloud credits. */
 export const CREDITS_CONTACT = "na-developer-communities@google.com";
 
+/** Where someone asks to be added to the organizer roster. */
+export const ORGANIZER_SIGNUP_CONTACT = "gca-americas@google.com";
+
 export type ParticipantEmailInput = {
   jamTitle: string;
   topicTitle: string;
@@ -115,4 +118,52 @@ ON THE DAY
 See you there,
 ${organizerName ?? "[your name]"}
 ${chapter}`;
+}
+
+
+export function organizerSignupSubject(chapter?: string): string {
+  return chapter
+    ? `Requesting organizer access for GDG Coding Jams · ${chapter}`
+    : "Requesting organizer access for GDG Coding Jams";
+}
+
+/**
+ * The "add me to the roster" request.
+ *
+ * The roster is keyed on a Google account, so the address this is sent from is
+ * the thing being registered — that is why the signed-in identity is written
+ * into the body rather than left as a bracket to fill in. Someone who is not
+ * signed in gets brackets and a line telling them which address to use, since
+ * sending from the wrong one is the mistake that costs a round trip.
+ */
+export function organizerSignupBody({
+  name,
+  email,
+}: {
+  name?: string;
+  email?: string;
+}): string {
+  const identity = email
+    ? `  Google account:  ${email}
+  Name:            ${name ?? "[your name]"}`
+    : `  Google account:  [the Gmail or Workspace address you will sign in with]
+  Name:            [your name]`;
+
+  return `Hi Google Community Ambassadors team,
+
+I'd like to run GDG Coding Jams and would like organizer access on codingjam.dev.
+
+${identity}
+
+  I am a:          [GDG chapter organizer / GDG on Campus organizer / Google Developer Expert]
+  Chapter:         [your chapter, e.g. GDG Seattle — leave blank if you are a GDE]
+  GDE profile:     [link to your GDE directory profile, if you are a GDE]
+  Country:         [country]
+  First jam:       [rough date, or "not decided yet"]
+
+Once I'm on the roster I'll be able to publish a jam page and take
+submissions from my room.
+
+Thanks,
+[your name]`;
 }

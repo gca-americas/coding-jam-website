@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/lib/i18n/client";
 
 export default function CopyableCode({ code }: { code: string }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
 
   async function onCopy() {
@@ -24,7 +26,7 @@ export default function CopyableCode({ code }: { code: string }) {
       <button
         type="button"
         onClick={onCopy}
-        aria-label="Copy to clipboard"
+        aria-label={t("cc.copy")}
         className="absolute top-2 right-2 text-[10px] font-semibold uppercase tracking-wider px-2 py-1 rounded-md bg-white border border-line text-ash hover:text-ink hover:bg-cloud opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
       >
         {copied ? "Copied ✓" : "Copy"}
