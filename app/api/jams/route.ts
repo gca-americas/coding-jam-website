@@ -95,6 +95,7 @@ export async function POST(req: Request) {
       chapterName: fields.chapterName,
       country: fields.country!,
       eventDate: fields.eventDate ?? undefined,
+      deadline: fields.deadline ?? undefined,
       locationNote: fields.locationNote ?? undefined,
       rsvpUrl: fields.rsvpUrl ?? undefined,
       status: fields.status!,

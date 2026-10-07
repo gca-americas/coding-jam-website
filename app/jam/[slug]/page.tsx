@@ -5,7 +5,7 @@ import { localizeTopicView } from "@/lib/i18n/tracks";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admins";
-import { canEditJam, getJam } from "@/lib/jams";
+import { canEditJam, getJam, isPastDeadline } from "@/lib/jams";
 import { topicView, LINK_FIELDS } from "@/lib/topic";
 import { colorClasses, trackLabel } from "@/lib/tracks";
 import { listProjects } from "@/lib/projects";
@@ -65,6 +65,7 @@ export default async function JamPage({ params }: { params: Promise<{ slug: stri
      say otherwise. Only the emphasis changes — both actions stay on the page. */
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = Boolean(jam.eventDate && jam.eventDate > today);
+  const closed = isPastDeadline(jam);
   const submitHref = `/submit?jam=${encodeURIComponent(jam.slug)}`;
 
   return (
@@ -112,16 +113,22 @@ export default async function JamPage({ params }: { params: Promise<{ slug: stri
           </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link
-              href={submitHref}
-              className={
-                upcoming
-                  ? "btn border border-white/40 text-white hover:bg-white/10 text-base"
-                  : "btn bg-white text-ink hover:shadow-pop text-base sm:text-lg !px-7 !py-4 font-semibold shadow-lift"
-              }
-            >
-              {t("jam.shareBuilt")} <span aria-hidden="true">→</span>
-            </Link>
+            {closed ? (
+              <span className="btn bg-white/15 border border-white/30 text-white/80 cursor-not-allowed text-base">
+                {t("jam.detail.closed")}
+              </span>
+            ) : (
+              <Link
+                href={submitHref}
+                className={
+                  upcoming
+                    ? "btn border border-white/40 text-white hover:bg-white/10 text-base"
+                    : "btn bg-white text-ink hover:shadow-pop text-base sm:text-lg !px-7 !py-4 font-semibold shadow-lift"
+                }
+              >
+                {t("jam.shareBuilt")} <span aria-hidden="true">→</span>
+              </Link>
+            )}
             {jam.rsvpUrl && (
               <a
                 href={jam.rsvpUrl}
@@ -165,9 +172,13 @@ export default async function JamPage({ params }: { params: Promise<{ slug: stri
                     : t(builds.length === 1 ? "jam.shipped.one" : "jam.shipped.many").replace("{n}", String(builds.length))}
                 </h2>
               </div>
-              <Link href={submitHref} className="btn-google shrink-0">
-                {t("jam.shipped.add")}
-              </Link>
+              {closed ? (
+                <span className="text-sm font-medium text-ash">{t("jam.detail.closed")}</span>
+              ) : (
+                <Link href={submitHref} className="btn-google shrink-0">
+                  {t("jam.shipped.add")}
+                </Link>
+              )}
             </div>
             {builds.length === 0 ? (
               <p className="text-ash mt-3">
@@ -184,22 +195,36 @@ export default async function JamPage({ params }: { params: Promise<{ slug: stri
             {/* Scrolling past everyone else's work is the moment you decide to
                 add your own, so the ask lands there rather than only at the top
                 of a page this long. */}
-            <div className={`mt-8 rounded-2xl ${c.bg} text-white p-7 sm:p-9 flex flex-col sm:flex-row sm:items-center gap-6`}>
-              <div className="min-w-0 flex-1">
-                <h3 className="h-display text-2xl sm:text-3xl leading-tight">
-                  {t("jam.submit.title")}
+            {closed ? (
+              <div className="mt-8 rounded-2xl bg-cloud border border-line text-ink p-7 sm:p-9">
+                <h3 className="h-display text-2xl leading-tight">
+                  {t("jam.submit.closedTitle")}
                 </h3>
-                <p className="mt-2 text-white/90 max-w-lg">
-                  {t("jam.submit.body")}
+                <p className="mt-2 text-ash max-w-lg">
+                  {t("jam.submit.closedBody").replace(
+                    "{date}",
+                    jam.deadline ? formatDate(jam.deadline, locale) : "",
+                  )}
                 </p>
               </div>
-              <Link
-                href={submitHref}
-                className="btn bg-white text-ink hover:shadow-pop shrink-0 text-base sm:text-lg !px-7 !py-4 font-semibold"
-              >
-                {t("jam.shareBuilt")} <span aria-hidden="true">→</span>
-              </Link>
-            </div>
+            ) : (
+              <div className={`mt-8 rounded-2xl ${c.bg} text-white p-7 sm:p-9 flex flex-col sm:flex-row sm:items-center gap-6`}>
+                <div className="min-w-0 flex-1">
+                  <h3 className="h-display text-2xl sm:text-3xl leading-tight">
+                    {t("jam.submit.title")}
+                  </h3>
+                  <p className="mt-2 text-white/90 max-w-lg">
+                    {t("jam.submit.body")}
+                  </p>
+                </div>
+                <Link
+                  href={submitHref}
+                  className="btn bg-white text-ink hover:shadow-pop shrink-0 text-base sm:text-lg !px-7 !py-4 font-semibold"
+                >
+                  {t("jam.shareBuilt")} <span aria-hidden="true">→</span>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 
@@ -214,14 +239,27 @@ export default async function JamPage({ params }: { params: Promise<{ slug: stri
               />
               <Detail label={t("jam.detail.chapter")} value={`${jam.chapter} · ${jam.country}`} />
               {jam.eventDate && <Detail label={t("jam.detail.date")} value={formatDate(jam.eventDate, locale)} />}
+              {jam.deadline && (
+                <Detail
+                  label={t("jam.detail.deadline")}
+                  value={formatDate(jam.deadline, locale)}
+                  sub={closed ? t("jam.detail.closed") : t("jam.detail.untilEndOfDay")}
+                />
+              )}
               {jam.locationNote && <Detail label={t("jam.detail.where")} value={jam.locationNote} />}
             </dl>
-            <Link
-              href={submitHref}
-              className={`btn w-full mt-5 text-center block ${c.bg} text-white hover:brightness-110 font-semibold`}
-            >
-              {t("jam.shareBuilt")} <span aria-hidden="true">→</span>
-            </Link>
+            {closed ? (
+              <div className="btn w-full mt-5 text-center block bg-cloud text-ash border border-line cursor-not-allowed font-medium">
+                {t("jam.detail.closed")}
+              </div>
+            ) : (
+              <Link
+                href={submitHref}
+                className={`btn w-full mt-5 text-center block ${c.bg} text-white hover:brightness-110 font-semibold`}
+              >
+                {t("jam.shareBuilt")} <span aria-hidden="true">→</span>
+              </Link>
+            )}
             {jam.rsvpUrl && (
               <a
                 href={jam.rsvpUrl}

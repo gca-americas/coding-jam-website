@@ -10,7 +10,7 @@ import {
 import { emailToProfileId } from "@/lib/profile";
 import { canonicalChapterName, isChapterType, resolveChapter } from "@/lib/chapters";
 import { canonicalCountry } from "@/lib/countries";
-import { getJam } from "@/lib/jams";
+import { getJam, isPastDeadline } from "@/lib/jams";
 import { parseGoogleTech } from "@/lib/google-tech";
 import { topicView } from "@/lib/topic";
 import { auth } from "@/auth";
@@ -130,6 +130,12 @@ export async function PATCH(
       const jam = await getJam(slug);
       if (!jam || jam.status !== "published") {
         return NextResponse.json({ error: "That jam isn't accepting submissions." }, { status: 400 });
+      }
+      if (guard.isOwner && slug !== guard.project.jamSlug && isPastDeadline(jam)) {
+        return NextResponse.json(
+          { error: `Submissions for this jam closed at the end of ${jam.deadline}.` },
+          { status: 400 },
+        );
       }
       const view = topicView(jam.topic);
       patch.jamSlug = jam.slug;

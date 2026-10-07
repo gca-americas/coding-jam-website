@@ -2,7 +2,7 @@ import Link from "next/link";
 import SubmitForm from "./SubmitForm";
 import SignInGate from "./SignInGate";
 import { getCopy, getT } from "@/lib/i18n";
-import { getJam, jamsOpenForSubmission, listPublishedJams } from "@/lib/jams";
+import { getJam, isPastDeadline, jamsOpenForSubmission, listPublishedJams } from "@/lib/jams";
 import { topicView } from "@/lib/topic";
 import { auth } from "@/auth";
 
@@ -19,13 +19,13 @@ export default async function SubmitPage({
   const user = session?.user;
   const signedIn = Boolean(user?.email);
 
-  // Arriving from a jam page locks the topic to that jam. An unknown or
-  // unpublished slug is ignored rather than erroring — the plain submit form
-  // is always a valid fallback.
+  // Arriving from a jam page locks the topic to that jam. An unknown,
+  // unpublished, or past-deadline slug is not locked.
   const { jam: jamSlug } = await searchParams;
   const jam = jamSlug ? await getJam(jamSlug) : null;
+  const jamClosed = Boolean(jam && jam.status === "published" && isPastDeadline(jam));
 
-  // Free-standing submissions pick their jam from the last two weeks.
+  // Free-standing submissions pick their jam from the last two weeks (or open deadlines).
   const jamChoices = jamsOpenForSubmission(await listPublishedJams()).map((j) => ({
     slug: j.slug,
     title: j.title,
@@ -33,7 +33,7 @@ export default async function SubmitPage({
     eventDate: j.eventDate,
   }));
   const jamContext =
-    jam && jam.status === "published"
+    jam && jam.status === "published" && !jamClosed
       ? {
           slug: jam.slug,
           title: jam.title,
@@ -63,6 +63,15 @@ export default async function SubmitPage({
           </p>
         </div>
       </section>
+
+      {jamClosed && jam && (
+        <section className="container-page mb-6">
+          <div className="rounded-2xl border border-gred/30 bg-gred/10 p-5 text-sm text-gred">
+            <b>{jam.title}:</b>{" "}
+            {t("jam.submit.closedBody").replace("{date}", jam.deadline ?? "")}
+          </div>
+        </section>
+      )}
 
       {/* Arriving here cold means picking the jam from a dropdown, which is the
           step people get wrong — and a quiet strip above the form is read by

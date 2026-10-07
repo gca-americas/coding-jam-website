@@ -24,6 +24,7 @@ export type JamFields = {
   chapterName?: string;
   country?: string;
   eventDate?: string | null;
+  deadline?: string | null;
   locationNote?: string | null;
   rsvpUrl?: string | null;
   status?: JamStatus;
@@ -91,6 +92,13 @@ export function parseJamInput(
     if (!raw) fields.eventDate = null;
     else if (!isCalendarDate(raw)) return { error: "Event date must be a real date (YYYY-MM-DD)." };
     else fields.eventDate = raw;
+  }
+
+  if (body.deadline !== undefined) {
+    const raw = str(body.deadline);
+    if (!raw) fields.deadline = null;
+    else if (!isCalendarDate(raw)) return { error: "Deadline must be a real date (YYYY-MM-DD)." };
+    else fields.deadline = raw;
   }
 
   if (body.locationNote !== undefined) {

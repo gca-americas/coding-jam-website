@@ -36,6 +36,8 @@ export type Jam = {
   country: string;
   /** YYYY-MM-DD. Absent for jams with no date set yet. */
   eventDate?: string;
+  /** YYYY-MM-DD. Optional submission deadline; open through the end of this day. */
+  deadline?: string;
   /** Free text: "6:30pm, Room 401" or "Online". */
   locationNote?: string;
   rsvpUrl?: string;
@@ -61,21 +63,42 @@ export const MAX_JAMS_PER_ORGANIZER = 50;
 export const SUBMISSION_WINDOW_DAYS = 14;
 
 /**
- * The jams a build can be credited to today: published, dated, and held within
- * the last two weeks (today inclusive).
+ * Whether the jam's optional submission deadline has passed.
  *
- * Undated jams are excluded — with no date there's no way to tell whether they
- * fall in the window, and a permanently-listed jam would collect submissions
- * from rooms that never attended it.
+ * A deadline is inclusive of the entire day set by the organizer (open through
+ * the end of `jam.deadline`). Once `today` (YYYY-MM-DD) is strictly after
+ * `jam.deadline`, the jam is closed for submissions.
+ */
+export function isPastDeadline(
+  jam: Pick<Jam, "deadline">,
+  today: Date = new Date(),
+): boolean {
+  if (!jam.deadline) return false;
+  const currentDay = today.toISOString().slice(0, 10);
+  return currentDay > jam.deadline;
+}
+
+/**
+ * The jams a build can be credited to today: published, dated, and held within
+ * the last two weeks (today inclusive) — or with an active submission deadline
+ * that has not yet passed.
+ *
+ * When a jam has an explicit `deadline`, it remains open through the end of
+ * that day and closes immediately on the following day.
  */
 export function jamsOpenForSubmission(jams: ReadonlyArray<Jam>, today: Date = new Date()): Jam[] {
   const end = today.toISOString().slice(0, 10);
   const start = new Date(today.getTime() - SUBMISSION_WINDOW_DAYS * 86_400_000)
     .toISOString()
     .slice(0, 10);
-  return jams.filter(
-    (j) => j.status === "published" && j.eventDate && j.eventDate >= start && j.eventDate <= end,
-  );
+  return jams.filter((j) => {
+    if (j.status !== "published") return false;
+    if (j.deadline) {
+      if (end > j.deadline) return false;
+      return !j.eventDate || j.eventDate <= end;
+    }
+    return Boolean(j.eventDate && j.eventDate >= start && j.eventDate <= end);
+  });
 }
 
 /* ── Slugs ──────────────────────────────────────────────────────────────── */
@@ -116,6 +139,7 @@ export type JamPatch = Partial<{
   chapterName: string | null;
   country: string;
   eventDate: string | null;
+  deadline: string | null;
   locationNote: string | null;
   rsvpUrl: string | null;
   status: JamStatus;

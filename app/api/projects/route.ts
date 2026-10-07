@@ -4,7 +4,7 @@ import { emailToProfileId } from "@/lib/profile";
 import { isBlocked } from "@/lib/blocklist";
 import { canonicalChapterName, isChapterType, resolveChapter } from "@/lib/chapters";
 import { canonicalCountry } from "@/lib/countries";
-import { getJam } from "@/lib/jams";
+import { getJam, isPastDeadline } from "@/lib/jams";
 import { parseGoogleTech } from "@/lib/google-tech";
 import { topicView } from "@/lib/topic";
 import { auth } from "@/auth";
@@ -86,6 +86,12 @@ export async function POST(req: Request) {
     if (!jam || jam.status !== "published") {
       return NextResponse.json(
         { error: "That jam isn't accepting submissions." },
+        { status: 400 },
+      );
+    }
+    if (isPastDeadline(jam)) {
+      return NextResponse.json(
+        { error: `Submissions for this jam closed at the end of ${jam.deadline}.` },
         { status: 400 },
       );
     }

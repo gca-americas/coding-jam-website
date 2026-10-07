@@ -34,6 +34,7 @@ type Draft = {
   chapterName: string;
   country: string;
   eventDate: string;
+  deadline: string;
   locationNote: string;
   rsvpUrl: string;
   status: "draft" | "published" | "archived";
@@ -51,7 +52,7 @@ function emptyDraft(defaults: { chapterType: ChapterType; chapterName: string; c
   return {
     slug: "", title: "",
     chapterType: defaults.chapterType, chapterName: defaults.chapterName, country: defaults.country,
-    eventDate: "", locationNote: "", rsvpUrl: "", status: "draft",
+    eventDate: "", deadline: "", locationNote: "", rsvpUrl: "", status: "draft",
     kind: "track", trackSlug: "",
     custom: {
       title: "", tagline: "", mmv: "", thinkAbout: [""], tech: [""], polished: [""],
@@ -67,7 +68,7 @@ function emptyDraft(defaults: { chapterType: ChapterType; chapterName: string; c
  * draft you set a new date on, never a second live page duplicating the first.
  */
 function draftForCopy(jam: Jam, defaults: Parameters<typeof emptyDraft>[0]): Draft {
-  return { ...draftFromJam(jam, defaults), slug: "", eventDate: "", status: "draft" };
+  return { ...draftFromJam(jam, defaults), slug: "", eventDate: "", deadline: "", status: "draft" };
 }
 
 function draftFromJam(jam: Jam, defaults: Parameters<typeof emptyDraft>[0]): Draft {
@@ -80,6 +81,7 @@ function draftFromJam(jam: Jam, defaults: Parameters<typeof emptyDraft>[0]): Dra
     chapterName: jam.chapterName ?? jam.chapter,
     country: jam.country,
     eventDate: jam.eventDate ?? "",
+    deadline: jam.deadline ?? "",
     locationNote: jam.locationNote ?? "",
     rsvpUrl: jam.rsvpUrl ?? "",
     status: jam.status,
@@ -174,6 +176,7 @@ export default function JamForm({
       set("title", prefill.title);
       set("country", prefill.country);
       set("eventDate", prefill.eventDate);
+      set("deadline", prefill.deadline);
       set("locationNote", prefill.locationNote);
       set("rsvpUrl", prefill.rsvpUrl);
       if (prefill.chapter) {
@@ -238,6 +241,7 @@ export default function JamForm({
       chapterName: d.chapterName,
       country: d.country,
       eventDate: d.eventDate,
+      deadline: d.deadline,
       locationNote: d.locationNote,
       rsvpUrl: d.rsvpUrl,
       status: d.status,
@@ -400,14 +404,26 @@ export default function JamForm({
             onChange={(next) => set({ chapterType: next.type, chapterName: next.name })}
           />
         </Field>
+        <Field label={t("sf.country")}>
+          <select required className="input" value={d.country} onChange={(e) => set({ country: e.target.value })}>
+            {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </Field>
         <div className="grid sm:grid-cols-2 gap-4">
-          <Field label={t("sf.country")}>
-            <select required className="input" value={d.country} onChange={(e) => set({ country: e.target.value })}>
-              {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </Field>
           <Field label={t("jfm.date")} hint={t("jfm.date.hint")}>
             <input type="date" className="input" value={d.eventDate} onChange={(e) => set({ eventDate: e.target.value })} />
+          </Field>
+          <Field
+            label={t("jfm.deadline", "Submission deadline")}
+            hint={t("jfm.deadline.hint", "Optional — open until the end of this day.")}
+          >
+            <input
+              type="date"
+              min={d.eventDate || undefined}
+              className="input"
+              value={d.deadline}
+              onChange={(e) => set({ deadline: e.target.value })}
+            />
           </Field>
         </div>
         <div className="grid sm:grid-cols-2 gap-4">

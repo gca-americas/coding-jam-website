@@ -290,6 +290,10 @@ export function buildTools(organizer: AgentOrganizer, signals: ToolSignal[]) {
       chapterType: z.enum(["gdg", "campus", "other"]),
       country: z.string(),
       eventDate: z.string().optional().describe("YYYY-MM-DD from ask_date. Omit if undecided."),
+      deadline: z
+        .string()
+        .optional()
+        .describe("Optional YYYY-MM-DD submission deadline (open through the end of this day). Omit if not specified."),
       locationNote: z.string().optional().describe("e.g. '6:30pm, Room 401' or 'Online'."),
       rsvpUrl: z.string().optional().describe("Full https:// link, or omit."),
       status: z
@@ -335,6 +339,7 @@ export function buildTools(organizer: AgentOrganizer, signals: ToolSignal[]) {
           chapterName,
           country: str(input.country),
           eventDate: str(input.eventDate),
+          deadline: str(input.deadline),
           locationNote: str(input.locationNote),
           rsvpUrl: str(input.rsvpUrl),
           status: input.status === "published" ? "published" : "draft",
@@ -362,6 +367,7 @@ export function buildTools(organizer: AgentOrganizer, signals: ToolSignal[]) {
         chapterName: fields.chapterName,
         country: fields.country!,
         eventDate: fields.eventDate ?? undefined,
+        deadline: fields.deadline ?? undefined,
         locationNote: fields.locationNote ?? undefined,
         rsvpUrl: fields.rsvpUrl ?? undefined,
         status: fields.status!,

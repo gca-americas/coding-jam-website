@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { getT } from "@/lib/i18n";
 import { isAdmin } from "@/lib/admins";
 import { canManageJams } from "@/lib/organizers";
-import { listJams, listJamsByOrganizer, type Jam } from "@/lib/jams";
+import { isPastDeadline, listJams, listJamsByOrganizer, type Jam } from "@/lib/jams";
 import { jamSubmissionCounts, listProjects } from "@/lib/projects";
 import { topicView } from "@/lib/topic";
 import NotAnOrganizer from "./NotAnOrganizer";
@@ -74,10 +74,18 @@ export default async function MyJamsPage() {
             {jams.map((jam) => {
               const view = topicView(jam.topic);
               const mine = jam.organizerEmail === email;
+              const closed = isPastDeadline(jam);
               return (
                 <div key={jam.slug} className="card p-5 flex flex-col">
                   <div className="flex items-start justify-between gap-3">
-                    <span className={`chip text-[10px] ${STATUS_CHIP[jam.status]}`}>{t(`myjams.status.${jam.status}`)}</span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={`chip text-[10px] ${STATUS_CHIP[jam.status]}`}>{t(`myjams.status.${jam.status}`)}</span>
+                      {closed && (
+                        <span className="chip text-[10px] bg-gred/10 text-gred ring-1 ring-gred/30">
+                          {t("jam.detail.closed")}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-2xl leading-none">{view.emoji}</span>
                   </div>
                   <h3 className="font-display font-bold text-lg text-ink mt-3 leading-snug">{jam.title}</h3>
@@ -88,6 +96,11 @@ export default async function MyJamsPage() {
                   <div className="text-xs text-ash mt-3 space-y-0.5">
                     <div>{jam.chapter} · {jam.country}</div>
                     {jam.eventDate && <div className="tabular-nums">{jam.eventDate}</div>}
+                    {jam.deadline && (
+                      <div className="tabular-nums">
+                        {t("jam.detail.deadline")}: {jam.deadline}
+                      </div>
+                    )}
                     {admin && !mine && <div className="text-gblue">{t("myjams.by")} {jam.organizerName}</div>}
                   </div>
                   <div className="mt-3 flex items-baseline gap-1.5">
